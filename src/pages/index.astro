@@ -127,7 +127,7 @@ const statuses = [...new Set(all.map((c) => c.data.status))];
         >
           <a
             href={`/components/${item.id}/`}
-            class="group flex h-full flex-col border border-stroke bg-panel transition hover:border-stroke-strong focus-visible:border-focus focus-visible:outline-none"
+            class="group rounded-md overflow-clip flex h-full flex-col border border-stroke bg-panel transition hover:border-stroke-strong focus-visible:border-focus focus-visible:outline-none"
           >
             {/* Preview — real screenshot if one exists at /thumbs/<id>.<ext>,
                 neutral canvas-colored placeholder otherwise. */}
