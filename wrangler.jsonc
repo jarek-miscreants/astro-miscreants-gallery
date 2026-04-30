@@ -2,5 +2,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "astro-miscreants-gallery",
   "compatibility_date": "2025-04-01",
-  "pages_build_output_dir": "./dist"
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  }
 }
