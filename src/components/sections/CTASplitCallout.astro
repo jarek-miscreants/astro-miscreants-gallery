@@ -1,0 +1,56 @@
+---
+import SectionMain from "@components/SectionMain.astro";
+import Button from "@components/Button.astro";
+import { Icon } from "astro-icon/components";
+
+interface Props {
+  eyebrow?: string;
+  title?: string;
+  description?: string;
+  primaryLabel?: string;
+  primaryHref?: string;
+  bullets?: string[];
+}
+
+const {
+  eyebrow = "Ready when you are",
+  title = "Build the next thing on solid primitives.",
+  description = "Skip the boilerplate. Start with components, tokens, and patterns that already work together — and own every line.",
+  primaryLabel = "Get started",
+  primaryHref = "#",
+  bullets = [
+    "Semantic design tokens, no surprises",
+    "Astro-native — zero client JS by default",
+    "Drop-in components, owned by you",
+    "Production-ready accessibility",
+  ],
+} = Astro.props;
+---
+
+<SectionMain padding="lg">
+  <div class="grid gap-12 lg:grid-cols-2 lg:items-start lg:gap-16">
+    <div>
+      {eyebrow && (
+        <p class="text-xs uppercase tracking-[0.2em] text-fg-subtle">{eyebrow}</p>
+      )}
+      <h2 class="h2 mt-4 max-w-prose">{title}</h2>
+      <p class="mt-6 max-w-prose text-fg-muted">{description}</p>
+      <div class="mt-8">
+        <Button href={primaryHref}>{primaryLabel}</Button>
+      </div>
+    </div>
+
+    <ul class="flex flex-col border-y border-stroke">
+      {bullets.map((b) => (
+        <li class="flex items-start gap-3 border-t border-stroke py-3 first:border-t-0">
+          <Icon
+            name="lucide:check"
+            class="mt-0.5 h-4 w-4 shrink-0 text-fg"
+            aria-hidden="true"
+          />
+          <span class="text-sm text-fg">{b}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+</SectionMain>

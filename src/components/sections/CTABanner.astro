@@ -1,0 +1,47 @@
+---
+import SectionMain from "@components/SectionMain.astro";
+import Button from "@components/Button.astro";
+
+interface Props {
+  eyebrow?: string;
+  title?: string;
+  description?: string;
+  primaryLabel?: string;
+  primaryHref?: string;
+  secondaryLabel?: string;
+  secondaryHref?: string;
+}
+
+const {
+  eyebrow,
+  title = "Get going in minutes.",
+  description = "One repo, no install dance. Clone, run dev, and you're shipping by the end of the day.",
+  primaryLabel = "Get started",
+  primaryHref = "#",
+  secondaryLabel = "Documentation",
+  secondaryHref = "#",
+} = Astro.props;
+---
+
+<SectionMain padding="lg" contentPadding="none">
+  <div
+    data-theme="dark"
+    class="border border-stroke bg-canvas text-fg px-8 py-16 sm:px-16 sm:py-20"
+  >
+    <div class="mx-auto flex max-w-2xl flex-col items-center text-center">
+      {eyebrow && (
+        <p class="text-xs uppercase tracking-[0.2em] text-fg-subtle">{eyebrow}</p>
+      )}
+      <h2 class="h2 mt-4">{title}</h2>
+      <p class="mt-6 text-fg-muted">{description}</p>
+      <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:gap-4">
+        <Button href={primaryHref}>{primaryLabel}</Button>
+        {secondaryLabel && (
+          <Button variant="secondary" href={secondaryHref} withArrow={false}>
+            {secondaryLabel}
+          </Button>
+        )}
+      </div>
+    </div>
+  </div>
+</SectionMain>

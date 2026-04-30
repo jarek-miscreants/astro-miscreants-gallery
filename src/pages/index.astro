@@ -7,11 +7,12 @@ import { join } from "node:path";
 
 const all = await getCollection("components");
 
-const categoryOrder = ["primitive", "block", "pattern", "layout", "form", "labs"] as const;
+const categoryOrder = ["primitive", "block", "section", "pattern", "layout", "form", "labs"] as const;
 type Category = (typeof categoryOrder)[number];
 const categoryLabels: Record<Category, string> = {
   primitive: "Primitives",
   block: "Blocks",
+  section: "Sections",
   pattern: "Patterns",
   layout: "Layout",
   form: "Forms",

@@ -8,10 +8,11 @@ import Search from "../../components/Search.astro";
 const all = await getCollection("components");
 
 // Group by category, then sort each group alphabetically by title.
-const categoryOrder = ["primitive", "block", "pattern", "layout", "form", "labs"] as const;
+const categoryOrder = ["primitive", "block", "section", "pattern", "layout", "form", "labs"] as const;
 const categoryLabels: Record<typeof categoryOrder[number], string> = {
   primitive: "Primitives",
   block: "Blocks",
+  section: "Sections",
   pattern: "Patterns",
   layout: "Layout",
   form: "Forms",

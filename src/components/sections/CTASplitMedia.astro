@@ -1,0 +1,57 @@
+---
+import SectionMain from "@components/SectionMain.astro";
+import Button from "@components/Button.astro";
+
+interface Props {
+  eyebrow?: string;
+  title?: string;
+  description?: string;
+  primaryLabel?: string;
+  primaryHref?: string;
+  imageSrc?: string;
+  imageAlt?: string;
+  imagePosition?: "left" | "right";
+}
+
+const {
+  eyebrow,
+  title = "A platform you can deploy this afternoon.",
+  description = "Everything you need to ship is in one place — components, content collections, theming, and the patterns to wire them together.",
+  primaryLabel = "Start building",
+  primaryHref = "#",
+  imageSrc = "https://images.unsplash.com/photo-1551434678-e076c223a692?w=1200&auto=format&fit=crop",
+  imageAlt = "",
+  imagePosition = "right",
+} = Astro.props;
+---
+
+<SectionMain padding="lg">
+  <div class="grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-16">
+    <div class:list={[
+      "max-w-prose",
+      imagePosition === "left" ? "lg:order-2" : "lg:order-1",
+    ]}>
+      {eyebrow && (
+        <p class="text-xs uppercase tracking-[0.2em] text-fg-subtle">{eyebrow}</p>
+      )}
+      <h2 class="h2 mt-4">{title}</h2>
+      <p class="mt-6 text-fg-muted">{description}</p>
+      <div class="mt-8">
+        <Button href={primaryHref}>{primaryLabel}</Button>
+      </div>
+    </div>
+
+    <div class:list={[
+      "border border-stroke bg-panel overflow-hidden",
+      imagePosition === "left" ? "lg:order-1" : "lg:order-2",
+    ]}>
+      <img
+        src={imageSrc}
+        alt={imageAlt}
+        class="aspect-[4/3] w-full object-cover"
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
+  </div>
+</SectionMain>

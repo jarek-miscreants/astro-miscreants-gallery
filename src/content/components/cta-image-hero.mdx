@@ -1,0 +1,42 @@
+---
+title: CTA Image Hero
+description: Full-bleed background image with gradient overlay, centered heading + paragraph + dual buttons. The most opinionated CTA — high visual weight.
+category: section
+order: 40
+sourceFile: src/components/sections/CTAImageHero.astro
+status: stable
+related: [CTABanner, CTASplitMedia, CTASplitCallout]
+---
+
+import Preview from "@components/_docs/Preview.astro";
+import PropsTable from "@components/_docs/PropsTable.astro";
+import CTAImageHero from "@components/sections/CTAImageHero.astro";
+
+Image carries the mood, gradient overlay carries the legibility, text and buttons sit centered on top. The heaviest CTA in the set — use it once per page, near the close, and don't put another `CTAImageHero` near it.
+
+## Preview
+
+<Preview label="Default" align="stretch">
+  <CTAImageHero />
+</Preview>
+
+## Props
+
+<PropsTable props={[
+  { name: "eyebrow", type: "string", description: "Optional small uppercase line above the heading." },
+  { name: "title", type: "string", description: "Main heading. Renders with the `h2` type-scale class." },
+  { name: "description", type: "string", description: "Supporting paragraph." },
+  { name: "primaryLabel", type: "string", default: '"Get started"', description: "Primary action label." },
+  { name: "primaryHref", type: "string", default: '"#"', description: "Primary action href." },
+  { name: "secondaryLabel", type: "string", default: '"See the docs"', description: "Secondary action label. Set to empty string to hide." },
+  { name: "secondaryHref", type: "string", default: '"#"', description: "Secondary action href." },
+  { name: "imageSrc", type: "string", description: "Background image URL. Defaults to a placeholder — replace before shipping." },
+  { name: "imageAlt", type: "string", default: '""', description: "Alt text. Empty string means decorative — preferred for hero backgrounds." },
+]} />
+
+## Notes
+
+- **Theming.** Inner panel is wrapped in `data-theme="dark"` so text and buttons resolve to the dark palette regardless of page theme. The gradient overlay is hardcoded (`from-black/80 via-black/65 to-black/45`) so contrast is consistent across any image.
+- **Image weight.** Bring images that work as backdrops, not headlines — landscape, atmospheric, low-detail. A busy product shot will fight the text.
+- **Alt text.** Background images that don't carry information should have empty `imageAlt`. The text content already announces the section to screen readers.
+- **One per page.** This component shouts. Pair it with calmer sections (banner, split callout) elsewhere on the same page.

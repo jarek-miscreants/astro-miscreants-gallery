@@ -1,0 +1,49 @@
+---
+title: CTA Split Media
+description: Two-column CTA with an image on one side and the pitch (heading + paragraph + button) on the other. Image position is configurable.
+category: section
+order: 20
+sourceFile: src/components/sections/CTASplitMedia.astro
+status: stable
+related: [CTASplitCallout, CTABanner, CTAImageHero]
+---
+
+import Preview from "@components/_docs/Preview.astro";
+import PropsTable from "@components/_docs/PropsTable.astro";
+import CTASplitMedia from "@components/sections/CTASplitMedia.astro";
+
+Image-anchored conversion section. The image carries the emotional pull, the text carries the argument, and the button carries the click. Image position swaps left↔right with one prop, so you can alternate down a long page without it feeling repetitive.
+
+## Preview
+
+<Preview label="Default — image right" align="stretch">
+  <CTASplitMedia />
+</Preview>
+
+<Preview label="Image left" align="stretch">
+  <CTASplitMedia
+    imagePosition="left"
+    title="Designed to be read, built to be skimmed."
+    description="Type scale, spacing, and stroke borders all calibrated so the page works at a glance and rewards the reader who slows down."
+    primaryLabel="See the styleguide"
+  />
+</Preview>
+
+## Props
+
+<PropsTable props={[
+  { name: "eyebrow", type: "string", description: "Optional small uppercase line above the heading." },
+  { name: "title", type: "string", description: "Main heading. Renders with the `h2` type-scale class." },
+  { name: "description", type: "string", description: "Supporting paragraph." },
+  { name: "primaryLabel", type: "string", default: '"Start building"', description: "Action button text." },
+  { name: "primaryHref", type: "string", default: '"#"', description: "Action button href." },
+  { name: "imageSrc", type: "string", description: "Image URL. Defaults to a placeholder Unsplash photo — replace before shipping." },
+  { name: "imageAlt", type: "string", default: '""', description: "Alt text for the image. Empty string means decorative." },
+  { name: "imagePosition", type: '"left" | "right"', default: '"right"', description: "Which column the image sits in on `lg+` viewports." },
+]} />
+
+## Notes
+
+- **Composition.** Built from `SectionMain` and `Button`. The image is wrapped in a `border-stroke` panel so it sits inside the design system rather than floating against the canvas.
+- **Aspect ratio.** Image renders at `aspect-[4/3]` and `object-cover`s — bring images that read at ~1200×900 or wider. Anything narrower will crop top/bottom.
+- **Alt text.** Pass a real `imageAlt` if the image carries information. Leave it empty only when the image is purely decorative.

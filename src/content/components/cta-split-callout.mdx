@@ -1,0 +1,38 @@
+---
+title: CTA Split Callout
+description: Two-column CTA — heading, supporting paragraph, and primary action on one side; a checked benefit list on the other. For pages where you need to sell features alongside the click.
+category: section
+order: 10
+sourceFile: src/components/sections/CTASplitCallout.astro
+status: stable
+related: [CTABanner, CTAImageHero, CTASplitMedia]
+---
+
+import Preview from "@components/_docs/Preview.astro";
+import PropsTable from "@components/_docs/PropsTable.astro";
+import CTASplitCallout from "@components/sections/CTASplitCallout.astro";
+
+A balanced split. The pitch (eyebrow + headline + paragraph + button) reads top-to-bottom on the left; a list of concrete benefits sits on the right so visitors who skim get the proof points without reading the paragraph. Collapses to a single column on mobile.
+
+## Preview
+
+<Preview label="Default" align="stretch">
+  <CTASplitCallout />
+</Preview>
+
+## Props
+
+<PropsTable props={[
+  { name: "eyebrow", type: "string", default: '"Ready when you are"', description: "Small uppercase line above the heading. Set to empty string to hide." },
+  { name: "title", type: "string", description: "Main heading. Renders with the `h2` type-scale class." },
+  { name: "description", type: "string", description: "Supporting paragraph below the heading." },
+  { name: "primaryLabel", type: "string", default: '"Get started"', description: "Action button text." },
+  { name: "primaryHref", type: "string", default: '"#"', description: "Action button href." },
+  { name: "bullets", type: "string[]", description: "Benefit list rendered on the right column. Each item gets a check icon." },
+]} />
+
+## Notes
+
+- **Composition.** Built from `SectionMain` (page rhythm + diagonal pattern columns) and `Button` (primary variant). No new design tokens introduced.
+- **Bullet count.** Three to five reads best. Past six the column gets taller than the text column and the layout starts to lean.
+- **Use when.** Conversion pages where the user already trusts the value but needs a checklist nudge. Not the right fit for cold traffic — that wants the image-driven CTAs.

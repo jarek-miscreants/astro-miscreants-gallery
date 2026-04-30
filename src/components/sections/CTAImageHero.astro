@@ -1,0 +1,65 @@
+---
+import SectionMain from "@components/SectionMain.astro";
+import Button from "@components/Button.astro";
+
+interface Props {
+  eyebrow?: string;
+  title?: string;
+  description?: string;
+  primaryLabel?: string;
+  primaryHref?: string;
+  secondaryLabel?: string;
+  secondaryHref?: string;
+  imageSrc?: string;
+  imageAlt?: string;
+}
+
+const {
+  eyebrow,
+  title = "Ship more, faster.",
+  description = "A starter that makes shipping the default state. Componentized, themed, accessible, and ready to deploy.",
+  primaryLabel = "Get started",
+  primaryHref = "#",
+  secondaryLabel = "See the docs",
+  secondaryHref = "#",
+  imageSrc = "https://images.unsplash.com/photo-1500964757637-c85e8a162699?w=1600&auto=format&fit=crop",
+  imageAlt = "",
+} = Astro.props;
+---
+
+<SectionMain padding="lg" contentPadding="none">
+  <div
+    data-theme="dark"
+    class="relative isolate overflow-hidden border border-stroke text-fg"
+  >
+    <img
+      src={imageSrc}
+      alt={imageAlt}
+      class="absolute inset-0 -z-10 h-full w-full object-cover"
+      loading="lazy"
+      decoding="async"
+    />
+    <div
+      aria-hidden="true"
+      class="absolute inset-0 -z-10 bg-gradient-to-br from-black/80 via-black/65 to-black/45"
+    ></div>
+
+    <div class="relative px-8 py-24 sm:px-16 sm:py-32">
+      <div class="mx-auto flex max-w-2xl flex-col items-center text-center">
+        {eyebrow && (
+          <p class="text-xs uppercase tracking-[0.2em] text-fg-subtle">{eyebrow}</p>
+        )}
+        <h2 class="h2 mt-4">{title}</h2>
+        <p class="mt-6 text-fg-muted">{description}</p>
+        <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:gap-4">
+          <Button href={primaryHref}>{primaryLabel}</Button>
+          {secondaryLabel && (
+            <Button variant="secondary" href={secondaryHref} withArrow={false}>
+              {secondaryLabel}
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+</SectionMain>

@@ -1,0 +1,39 @@
+---
+title: CTA Banner
+description: Centered, dark-inverted banner panel with heading, paragraph, and dual buttons. The page-end "ok, click something" rectangle.
+category: section
+order: 30
+sourceFile: src/components/sections/CTABanner.astro
+status: stable
+related: [CTASplitCallout, CTASplitMedia, CTAImageHero]
+---
+
+import Preview from "@components/_docs/Preview.astro";
+import PropsTable from "@components/_docs/PropsTable.astro";
+import CTABanner from "@components/sections/CTABanner.astro";
+
+A contained, contrasting banner. Forces a `data-theme="dark"` scope on the inner panel so it always reads as inverted regardless of what theme the surrounding page is using. Two buttons by default — primary action plus a softer secondary, in case the visitor isn't ready to commit yet.
+
+## Preview
+
+<Preview label="Default" align="stretch">
+  <CTABanner />
+</Preview>
+
+## Props
+
+<PropsTable props={[
+  { name: "eyebrow", type: "string", description: "Optional small uppercase line above the heading." },
+  { name: "title", type: "string", description: "Main heading. Renders with the `h2` type-scale class." },
+  { name: "description", type: "string", description: "Supporting paragraph." },
+  { name: "primaryLabel", type: "string", default: '"Get started"', description: "Primary action label." },
+  { name: "primaryHref", type: "string", default: '"#"', description: "Primary action href." },
+  { name: "secondaryLabel", type: "string", default: '"Documentation"', description: "Secondary (ghost) action label. Set to empty string to hide." },
+  { name: "secondaryHref", type: "string", default: '"#"', description: "Secondary action href." },
+]} />
+
+## Notes
+
+- **Theming.** The inner panel is wrapped in `data-theme="dark"`, so it reads as inverted whether the page is light or dark. Tokens like `bg-canvas`/`text-fg` resolve through the dark theme inside that wrapper.
+- **No image.** Banner is intentionally pattern-free — it's the calmest of the four CTAs and reads as "the call" rather than "the pitch."
+- **Padding.** Inner panel uses `contentPadding="none"` on `SectionMain` so the dark rectangle goes edge-to-edge of the content column. Internal padding is on the panel itself.
