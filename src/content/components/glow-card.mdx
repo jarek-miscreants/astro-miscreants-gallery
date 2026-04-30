@@ -1,0 +1,71 @@
+---
+title: GlowCard
+description: Card with a cone-masked mesh-gradient border and soft outer halo that follow the cursor. Optional sweep animation on mount.
+category: labs
+order: 10
+sourceFile: src/components/GlowCard.astro
+status: experimental
+related: [Grainient, CardFeatured]
+---
+
+import Preview from "@components/_docs/Preview.astro";
+import PropsTable from "@components/_docs/PropsTable.astro";
+import GlowCard from "@components/GlowCard.astro";
+
+Hover-reactive card. Tracks the pointer over its surface, projects the cursor onto a conic-gradient mask, and reveals the mesh-gradient border + outer halo only on the side closest to the cursor. The optional `animated` flag plays a one-shot sweep on mount so the effect advertises itself before any hover.
+
+## Preview
+
+<Preview label="Hover the edges" align="stretch">
+  <div class="grid grid-cols-1 gap-6 p-6 md:grid-cols-2" data-theme="dark" style="background: #0a0a0a">
+    <GlowCard>
+      <div class="p-8 text-white">
+        <p class="text-xs uppercase tracking-wider text-white/50">Default</p>
+        <h3 class="mt-2 text-xl font-semibold">Hover the edges</h3>
+        <p class="mt-3 text-sm text-white/70">Default purple/pink/sky palette. Glow follows your cursor around the card.</p>
+      </div>
+    </GlowCard>
+    <GlowCard
+      animated
+      glowColor="120 80% 70%"
+      colors={["#86efac", "#4ade80", "#22d3ee"]}
+      backgroundColor="#031412"
+    >
+      <div class="p-8 text-white">
+        <p class="text-xs uppercase tracking-wider text-white/50">Animated</p>
+        <h3 class="mt-2 text-xl font-semibold">Plays on mount</h3>
+        <p class="mt-3 text-sm text-white/70"><code class="text-xs">animated</code> triggers a one-shot conic sweep so the glow shows itself.</p>
+      </div>
+    </GlowCard>
+  </div>
+</Preview>
+
+## Props
+
+<PropsTable props={[
+  { name: "edgeSensitivity", type: "number", default: "30", description: "Edge proximity (0..1) at which the glow starts to ramp on. Higher = tighter to the edge before the glow shows." },
+  { name: "glowColor", type: "string", default: '"40 80% 80%"', description: "Glow color as `H S% L%` (no hsl() wrapper)." },
+  { name: "backgroundColor", type: "string", default: '"#120F17"', description: "Card background color (any CSS color)." },
+  { name: "borderRadius", type: "number", default: "28", description: "Corner radius in px." },
+  { name: "glowRadius", type: "number", default: "40", description: "Outer halo extent in px." },
+  { name: "glowIntensity", type: "number", default: "1.0", description: "Halo intensity multiplier." },
+  { name: "coneSpread", type: "number", default: "25", description: "Width of the lit cone behind the cursor, in % of the conic." },
+  { name: "animated", type: "boolean", default: "false", description: "Play a one-shot sweep on mount." },
+  { name: "colors", type: "string[]", default: '["#c084fc", "#f472b6", "#38bdf8"]', description: "Mesh-gradient palette. 1–3 colors, repeated to fill 7 stops." },
+  { name: "fillOpacity", type: "number", default: "0.5", description: "Opacity of the mesh fill layer (0..1)." },
+  { name: "class", type: "string", description: "Additional classes on the wrapper." },
+]} />
+
+## Mechanism
+
+- A pointermove listener on the card writes two CSS variables: `--gc-angle` (cursor angle, 0–360deg) and proximity-derived `--gc-border-opacity` / `--gc-glow-opacity`.
+- The border layer is a stack of `radial-gradient` mesh slices used as a `border-box` background, masked by a `conic-gradient` aimed at the cursor — so only the side facing the pointer shows the gradient.
+- The fill layer is the same mesh palette painted into the padding box, masked through a multi-step composite (subtract, add×5) so the fill bleeds inward from the corners and from the cursor side, blended `soft-light` over the card background.
+- The outer halo is a `box-shadow` stack on a sibling element, also masked by a conic gradient so the halo is asymmetric — concentrated on the cursor's side.
+
+## Notes
+
+- **Requires a dark surface.** The default `backgroundColor` is dark; the mesh + halo are designed to read on dark. Use the `data-theme="dark"` wrapper or a custom dark background — see the [Layout](/components/layout/) docs for page-wide and per-section dark themes.
+- **No tokens consumed.** The component takes its colors entirely from props — won't drift across themes.
+- The sweep animation runs once on mount. To replay it from JS, dispatch a synthetic `pointerenter` then `pointerleave`, or re-mount the component (`<GlowCard key=…>`-style if you wrap it).
+- `prefers-reduced-motion: reduce` disables the cross-fade transitions but the cursor-tracked variables still update; the change is just instant. The mount sweep is also visually muted because the transitions are zero.

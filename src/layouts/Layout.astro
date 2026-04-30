@@ -1,48 +1,29 @@
 ---
-// A layout is a reusable wrapper for your pages.
-// Anything you put between <Layout>...</Layout> in a page lands in <slot />.
+// Layout — app-shell layout for the gallery. A fixed left sidebar holds nav
+// or filtering UI; the right pane scrolls. Body height is 100svh so neither
+// the page nor the sidebar can ever push the chrome off-screen.
 //
-// Props are declared via an interface and read from Astro.props.
+// Pages provide their own sidebar via `<aside slot="sidebar">…</aside>`.
+// If they don't, a default sidebar shows just the brand and a "Browse"
+// link back to the catalog.
 import "@fontsource-variable/archivo";
 import "../styles/global.css";
-import { getCollection, render } from "astro:content";
-import Nav from "../components/NavMorph.astro";
-import AnnouncementBanner from "../components/AnnouncementBanner.astro";
+import Logo from "../components/Logo.astro";
+
 interface Props {
   title?: string;
-  /** Theme attribute applied at the document root — flips tokens for the whole page (nav included). */
+  /** Theme attribute applied at the document root — flips tokens for the whole page. */
   theme?: "light" | "dark" | "brand";
   /** Frontmatter object, present when this layout is used from a Markdown/MDX page. */
   frontmatter?: { title?: string; theme?: "light" | "dark" | "brand" };
 }
 
-// MDX/Markdown pages with `layout:` pass their frontmatter under `frontmatter`,
-// while `.astro` pages pass props flat. Fall back so both work.
 const fm = Astro.props.frontmatter ?? {};
-const { title = fm.title ?? "Astro Playground", theme = fm.theme ?? "light" } = Astro.props;
+const {
+  title = fm.title ?? "Astro Miscreants Gallery",
+  theme = fm.theme ?? "dark",
+} = Astro.props;
 const gtagId = import.meta.env.PUBLIC_GTAG_ID;
-
-// Pick the currently-active announcement, if any.
-// Filters by enabled flag and schedule window. Highest priority wins;
-// ties broken by most recent startsAt. Evaluated at build time.
-const now = new Date();
-const active = (await getCollection("announcements"))
-  .filter((a) => a.data.enabled)
-  .filter((a) => !a.data.startsAt || a.data.startsAt <= now)
-  .filter((a) => !a.data.endsAt || a.data.endsAt >= now)
-  .sort((a, b) => {
-    if (a.data.priority !== b.data.priority)
-      return b.data.priority - a.data.priority;
-    const aStart = a.data.startsAt?.getTime() ?? 0;
-    const bStart = b.data.startsAt?.getTime() ?? 0;
-    return bStart - aStart;
-  });
-
-const announcement = active[0];
-const AnnouncementContent = announcement
-  ? (await render(announcement)).Content
-  : null;
-
 ---
 
 <html lang="en" data-theme={theme}>
@@ -65,25 +46,76 @@ const AnnouncementContent = announcement
       </>
     )}
   </head>
-  <body>
+  <body class="app-shell">
     <a
       href="#main"
-      class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-intent focus:text-fg-on-intent focus:rounded-sm"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-intent focus:text-fg-on-intent"
     >
       Skip to main content
     </a>
-    <Nav>
-      {announcement && AnnouncementContent && (
-        <AnnouncementBanner
-          slot="announcement"
-          href={announcement.data.href}
-          dismissible={announcement.data.dismissible}
-          class="bg-intent text-fg-on-intent text-sm"
-        >
-          <AnnouncementContent />
-        </AnnouncementBanner>
-      )}
-    </Nav>
-    <slot />
+
+    <aside class="app-sidebar" aria-label="Sidebar">
+      <slot name="sidebar">
+        <div class="flex flex-col gap-4">
+          <a href="/" class="block text-fg" aria-label="Astro Miscreants — home">
+            <Logo class="h-5 w-auto" />
+          </a>
+          <a href="/" class="text-xs text-fg-muted hover:text-fg transition">
+            ← Browse the catalog
+          </a>
+        </div>
+      </slot>
+    </aside>
+
+    <div class="app-main">
+      <slot />
+    </div>
   </body>
 </html>
+
+<style is:global>
+  /* App shell — fixed-width sidebar on the left, scrollable main on the right.
+     `100svh` (small viewport height) keeps the chrome anchored on iOS even as
+     the URL bar collapses. */
+  body.app-shell {
+    margin: 0;
+    height: 100svh;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    background: var(--color-canvas);
+    color: var(--color-fg);
+  }
+
+  .app-sidebar {
+    height: 100svh;
+    overflow-y: auto;
+    border-right: 1px solid var(--color-stroke);
+    padding: 1.5rem 1.25rem;
+    background: var(--color-canvas);
+  }
+
+  .app-main {
+    height: 100svh;
+    overflow-y: auto;
+  }
+
+  /* Mobile — stack the sidebar above the main pane and let the page scroll
+     normally. Fixed-height app shell only makes sense on wider screens. */
+  @media (max-width: 768px) {
+    body.app-shell {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr;
+      height: auto;
+      overflow: auto;
+    }
+    .app-sidebar {
+      height: auto;
+      border-right: 0;
+      border-bottom: 1px solid var(--color-stroke);
+    }
+    .app-main {
+      height: auto;
+    }
+  }
+</style>

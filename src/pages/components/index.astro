@@ -8,13 +8,14 @@ import Search from "../../components/Search.astro";
 const all = await getCollection("components");
 
 // Group by category, then sort each group alphabetically by title.
-const categoryOrder = ["primitive", "block", "pattern", "layout", "form"] as const;
+const categoryOrder = ["primitive", "block", "pattern", "layout", "form", "labs"] as const;
 const categoryLabels: Record<typeof categoryOrder[number], string> = {
   primitive: "Primitives",
   block: "Blocks",
   pattern: "Patterns",
   layout: "Layout",
   form: "Forms",
+  labs: "Labs",
 };
 
 const groups = categoryOrder
@@ -28,7 +29,7 @@ const groups = categoryOrder
   .filter((g) => g.items.length > 0);
 ---
 
-<Layout title="Components">
+<Layout title="Components" theme="light">
   <main id="main" class="border-y border-stroke">
     <SectionMain id="components-hero" paddingTop="lg" paddingBottom="xs" contentPadding="default">
       <h1 class="h2">Components</h1>

@@ -31,10 +31,10 @@ const components = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
-    category: z.enum(["primitive", "block", "pattern", "layout", "form"]),
+    category: z.enum(["primitive", "block", "pattern", "layout", "form", "labs"]),
     order: z.number().default(100),
     sourceFile: z.string(),
-    status: z.enum(["stable", "adaptable", "per-project"]).default("stable"),
+    status: z.enum(["stable", "adaptable", "per-project", "experimental"]).default("stable"),
     related: z.array(z.string()).default([]),
   }),
 });

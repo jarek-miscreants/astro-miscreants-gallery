@@ -1,8 +1,10 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import SectionMain from "../../components/SectionMain.astro";
-import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import CodeBlock from "../../components/CodeBlock.astro";
+import Logo from "../../components/Logo.astro";
 import { getCollection, render } from "astro:content";
+import { readFileSync } from "node:fs";
+import { extname, join } from "node:path";
 
 export async function getStaticPaths() {
   const all = await getCollection("components");
@@ -15,72 +17,134 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 
-// Sibling links for "more in this category" navigation.
+// Read the source file at build time and pick a Shiki language id from the
+// extension. Rendered through CodeBlock, which already supplies a copy
+// button, language badge, and syntax highlighting.
+const sourcePath = join(process.cwd(), entry.data.sourceFile);
+let sourceCode = "";
+try {
+  sourceCode = readFileSync(sourcePath, "utf8");
+} catch {
+  sourceCode = `/* Could not read ${entry.data.sourceFile} */`;
+}
+const ext = extname(entry.data.sourceFile).slice(1);
+const langMap: Record<string, string> = {
+  astro: "astro",
+  ts: "ts",
+  tsx: "tsx",
+  js: "js",
+  jsx: "jsx",
+  css: "css",
+  html: "html",
+};
+const sourceLang = langMap[ext] ?? "plaintext";
+
+const categoryLabels: Record<string, string> = {
+  primitive: "Primitives",
+  block: "Blocks",
+  pattern: "Patterns",
+  layout: "Layout",
+  form: "Forms",
+  labs: "Labs",
+};
+
+// Sibling links for "more in this category" navigation, shown in the sidebar.
 const all = await getCollection("components");
 const siblings = all
   .filter((c) => c.data.category === entry.data.category && c.id !== entry.id)
-  .sort((a, b) => a.data.order - b.data.order)
-  .slice(0, 4);
+  .sort((a, b) => a.data.title.localeCompare(b.data.title));
 ---
 
-<Layout title={`${entry.data.title} — Components`}>
-  <main id="main" class="border-y border-stroke">
-    <SectionMain id="component-header" paddingTop="lg" paddingBottom="sm" contentPadding="default">
-      <Breadcrumbs
-        class="mb-4"
-        items={[
-          { label: "Components", href: "/components/" },
-          { label: entry.data.title },
-        ]}
-      />
-      <h1 class="h2">{entry.data.title}</h1>
-      <p class="mt-3 max-w-prose text-fg-muted">{entry.data.description}</p>
-      <p class="mt-4 text-xs text-fg-subtle">
-        <span class="uppercase tracking-wider mr-2">Source:</span>
-        <code class="text-fg-muted">{entry.data.sourceFile}</code>
-      </p>
-    </SectionMain>
+<Layout title={`${entry.data.title} — Astro Miscreants Gallery`} theme="light">
+  {/* Sidebar — back link, current component meta, related siblings. */}
+  <div slot="sidebar" class="flex h-full flex-col gap-6">
+    <div>
+      <a href="/" class="block text-fg" aria-label="Astro Miscreants — home">
+        <Logo class="h-5 w-auto" />
+      </a>
+      <a
+        href="/"
+        class="mt-4 inline-flex items-center gap-1 text-xs text-fg-muted hover:text-fg transition"
+      >
+        ← Back to gallery
+      </a>
+    </div>
 
-    <SectionMain id="component-body" paddingTop="sm" paddingBottom="md" contentPadding="default" borderTop>
-      <article class="prose-doc">
-        <Content />
-      </article>
-    </SectionMain>
+    <div>
+      <p class="text-[10px] uppercase tracking-wider text-fg-subtle">
+        {categoryLabels[entry.data.category] ?? entry.data.category}
+      </p>
+      <h2 class="mt-1 text-sm font-semibold text-fg">{entry.data.title}</h2>
+      <p class="mt-2 text-xs text-fg-muted">{entry.data.status}</p>
+    </div>
 
     {siblings.length > 0 && (
-      <SectionMain id="component-related" padding="sm" borderTop>
-        <h2 class="h5 mb-4">More {entry.data.category}s</h2>
-        <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <nav aria-label="Related components" class="flex flex-col gap-2">
+        <p class="text-[10px] uppercase tracking-wider text-fg-subtle">
+          More in {categoryLabels[entry.data.category] ?? entry.data.category}
+        </p>
+        <ul class="flex flex-col">
           {siblings.map((s) => (
             <li>
               <a
                 href={`/components/${s.id}/`}
-                class="flex h-full flex-col gap-2 border border-stroke bg-canvas p-6 transition hover:bg-panel-muted hover:border-stroke-strong focus-visible:bg-panel-muted outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+                class="block py-1.5 text-xs text-fg-muted hover:text-fg transition"
               >
-                <h3 class="text-sm font-semibold text-fg">{s.data.title}</h3>
-                <p class="text-sm text-fg-muted line-clamp-2">{s.data.description}</p>
+                {s.data.title}
               </a>
             </li>
           ))}
         </ul>
-      </SectionMain>
+      </nav>
     )}
+  </div>
+
+  {/* Main — clean detail page. No section wrappers, no dividers, no patterns. */}
+  <main id="main" class="px-8 py-10 max-w-[80rem]">
+    <header>
+      <p class="text-[11px] uppercase tracking-[0.2em] text-fg-subtle">
+        {categoryLabels[entry.data.category] ?? entry.data.category}
+      </p>
+      <h1 class="mt-3 text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
+        {entry.data.title}
+      </h1>
+      <p class="mt-4 max-w-prose text-base text-fg-muted">
+        {entry.data.description}
+      </p>
+      <p class="mt-5 text-xs text-fg-subtle">
+        <span class="uppercase tracking-wider mr-2">Source</span>
+        <code class="text-fg-muted">{entry.data.sourceFile}</code>
+      </p>
+    </header>
+
+    <article class="prose-doc mt-10">
+      <Content />
+    </article>
+
+    {/* Source — full file with copy button. The whole point of the gallery:
+        the page tells you what it is, the block lets you take it. */}
+    <section id="source" class="mt-12">
+      <h2 class="text-xl font-semibold tracking-tight text-fg">Source</h2>
+      <p class="mt-2 max-w-prose text-sm text-fg-muted">
+        Copy this file into <code class="px-1 py-0.5 bg-panel-muted border border-stroke">{entry.data.sourceFile}</code> in your Astro project.
+      </p>
+      <CodeBlock
+        class="mt-6"
+        code={sourceCode}
+        lang={sourceLang}
+        title={entry.data.sourceFile}
+        showLineNumbers
+      />
+    </section>
   </main>
 </Layout>
 
 <style is:global>
   /* Minimal "doc prose" styling for MDX content. Every selector wraps the
      element in `:not(:where(.not-prose, .not-prose *))` so prose styles
-     don't bleed into <Preview> blocks (which carry `not-prose`). Without
-     it, e.g. a live <AnnouncementBanner> rendered inside a Preview gets
-     its inner <a> overridden by .prose-doc a, producing dark-on-dark text.
-     `:where()` keeps specificity at 0 so live-component styles always win. */
+     don't bleed into <Preview> blocks (which carry `not-prose`). */
   .prose-doc {
     color: var(--color-fg);
-    align-self: center;
-    /* Flex items default to min-width: auto and grow to fit their largest
-       min-content child (long code strings, wide tables). Set min-width: 0
-       so the article shrinks to its parent column on narrow viewports. */
     width: 100%;
     min-width: 0;
     max-width: 100%;
@@ -116,27 +180,22 @@ const siblings = all
     border: 1px solid var(--color-stroke);
     padding: 0.05rem 0.35rem;
     font-size: 0.85em;
-    border-radius: 2px;
     color: var(--color-fg);
-    /* Long type signatures or paths shouldn't push the article wider than
-       the viewport — let them break wherever needed. */
     overflow-wrap: anywhere;
     word-break: break-word;
   }
-  /* Same for inline code that lands inside headings (e.g. an `h3` with
-     "Why <code>::details-content</code>"). */
   .prose-doc :where(h2, h3, h4, h5, h6):not(:where(.not-prose, .not-prose *)) {
     overflow-wrap: anywhere;
   }
   .prose-doc :where(pre):not(:where(.not-prose, .not-prose *)) {
-    background: var(--color-fg);
-    color: var(--color-canvas);
+    background: var(--color-panel);
+    color: var(--color-fg);
     padding: 1rem 1.25rem;
     overflow-x: auto;
     margin: 1rem 0;
     font-size: 0.85em;
     line-height: 1.6;
-    border: 1px solid var(--color-fg);
+    border: 1px solid var(--color-stroke);
   }
   .prose-doc :where(pre code):not(:where(.not-prose, .not-prose *)) {
     background: transparent;
