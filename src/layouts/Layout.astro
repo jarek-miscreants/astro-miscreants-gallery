@@ -1,0 +1,82 @@
+---
+// A layout is a reusable wrapper for your pages.
+// Anything you put between <Layout>...</Layout> in a page lands in <slot />.
+//
+// Props are declared via an interface and read from Astro.props.
+import "@fontsource-variable/archivo";
+import "../styles/global.css";
+import { getCollection, render } from "astro:content";
+import Nav from "../components/NavMorph.astro";
+import AnnouncementBanner from "../components/AnnouncementBanner.astro";
+interface Props {
+  title?: string;
+}
+
+const { title = "Astro Playground" } = Astro.props;
+const gtagId = import.meta.env.PUBLIC_GTAG_ID;
+
+// Pick the currently-active announcement, if any.
+// Filters by enabled flag and schedule window. Highest priority wins;
+// ties broken by most recent startsAt. Evaluated at build time.
+const now = new Date();
+const active = (await getCollection("announcements"))
+  .filter((a) => a.data.enabled)
+  .filter((a) => !a.data.startsAt || a.data.startsAt <= now)
+  .filter((a) => !a.data.endsAt || a.data.endsAt >= now)
+  .sort((a, b) => {
+    if (a.data.priority !== b.data.priority)
+      return b.data.priority - a.data.priority;
+    const aStart = a.data.startsAt?.getTime() ?? 0;
+    const bStart = b.data.startsAt?.getTime() ?? 0;
+    return bStart - aStart;
+  });
+
+const announcement = active[0];
+const AnnouncementContent = announcement
+  ? (await render(announcement)).Content
+  : null;
+
+---
+
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+
+    {gtagId && (
+      <>
+        <script async src={`https://www.googletagmanager.com/gtag/js?id=${gtagId}`}></script>
+        <script define:vars={{ gtagId }}>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){ dataLayer.push(arguments); }
+          gtag('js', new Date());
+          gtag('config', gtagId);
+        </script>
+      </>
+    )}
+  </head>
+  <body>
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-intent focus:text-fg-on-intent focus:rounded-sm"
+    >
+      Skip to main content
+    </a>
+    <Nav>
+      {announcement && AnnouncementContent && (
+        <AnnouncementBanner
+          slot="announcement"
+          href={announcement.data.href}
+          dismissible={announcement.data.dismissible}
+          class="bg-intent text-fg-on-intent text-sm"
+        >
+          <AnnouncementContent />
+        </AnnouncementBanner>
+      )}
+    </Nav>
+    <slot />
+  </body>
+</html>

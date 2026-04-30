@@ -1,0 +1,37 @@
+---
+// HeroCanvas — simplex noise bar animation.
+// Config is passed as props → data attributes → read by the script at runtime.
+
+interface Props {
+  cols?: number;
+  rows?: number;
+  scale?: number;
+  speed?: number;
+  padding?: number;
+  class?: string;
+}
+
+const {
+  cols = 16,
+  rows = 60,
+  scale = 0.37,
+  speed = 0.015,
+  padding = 0,
+  class: className,
+} = Astro.props;
+---
+
+<div class:list={["overflow-hidden", className]}>
+  <canvas
+    id="canvas"
+    data-cols={cols}
+    data-rows={rows}
+    data-scale={scale}
+    data-speed={speed}
+    data-padding={padding}
+    class="block w-full h-full"
+    aria-hidden="true"
+  ></canvas>
+</div>
+
+<script is:inline src="/scripts/hero-global.js"></script>

@@ -1,0 +1,52 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+type PadSize = "none" | "xs" | "sm" | "md" | "lg" | "xl";
+
+interface Props extends HTMLAttributes<"section"> {
+  padding?: PadSize;            // shorthand for both
+  paddingTop?: PadSize;         // overrides top
+  paddingBottom?: PadSize;      // overrides bottom
+  contentPadding?: "none" | "default";
+  contentClass?: string;
+  borderTop?: boolean;
+}
+const {
+  padding = "md",
+  paddingTop,
+  paddingBottom,
+  contentPadding = "default",
+  contentClass = "",
+  borderTop = false,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const top = paddingTop ?? padding;
+const bot = paddingBottom ?? padding;
+
+const ptClass = {
+  none: "", xs: "section-pt-xs", sm: "section-pt-sm",
+  md: "section-pt-md", lg: "section-pt-lg", xl: "section-pt-xl",
+}[top];
+const pbClass = {
+  none: "", xs: "section-pb-xs", sm: "section-pb-sm",
+  md: "section-pb-md", lg: "section-pb-lg", xl: "section-pb-xl",
+}[bot];
+
+const contentPaddingClass = {
+  none: "px-0",
+  default: "px-6",
+}[contentPadding];
+---
+
+<section
+  {...rest}
+  class:list={["section-grid-outside", borderTop && "border-t border-stroke", className]}
+>
+  <div class="section-pattern relative col-start-2 border-x border-stroke" aria-hidden="true"></div>
+  <div class:list={[ptClass, pbClass, "col-start-3 flex flex-col relative", contentPaddingClass, contentClass]}>
+    <slot />
+  </div>
+  <div class="section-pattern col-start-4 border-x border-stroke" aria-hidden="true"></div>
+</section>

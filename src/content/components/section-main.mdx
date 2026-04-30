@@ -1,0 +1,81 @@
+---
+title: SectionMain
+description: Page section wrapper — centered content column flanked by decorative pattern gutters with grid borders.
+category: layout
+order: 10
+sourceFile: src/components/SectionMain.astro
+status: stable
+related: [Layout, Footer]
+---
+
+import PropsTable from "@components/_docs/PropsTable.astro";
+
+The primary section primitive. Wraps page content in the site's standard layout: a centered content column flanked by decorative `section-pattern` gutters with vertical `border-x` rules. Most sections on the page should be wrapped in this.
+
+## Props
+
+<PropsTable props={[
+  { name: "id", type: "string", description: "HTML id for anchor linking." },
+  { name: "padding", type: '"none" | "xs" | "sm" | "md" | "lg" | "xl"', default: '"md"', description: "Vertical padding preset." },
+  { name: "contentPadding", type: '"none" | "default"', default: '"default"', description: "Horizontal padding inside the content column." },
+  { name: "contentClass", type: "string", default: '""', description: "Additional classes on the content column." },
+  { name: "borderTop", type: "boolean", default: "false", description: "Add a top border to the section." },
+]} />
+
+## Mechanism
+
+### Grid structure
+
+Uses `section-grid-outside` — a 5-column CSS grid:
+
+```
+[gutter-left] [pattern-left] [content (90rem max)] [pattern-right] [gutter-right]
+```
+
+- **Columns 2 & 4** (pattern columns): `section-pattern` (diagonal stripes) + `border-x` for vertical grid lines. Marked `aria-hidden="true"`.
+- **Column 3** (content): receives the vertical padding and holds the `<slot />`.
+
+### Padding map
+
+The `padding` prop maps to utilities defined in `global.css`:
+
+| Value  | Utility               | Result   |
+|--------|-----------------------|----------|
+| `none` | (none)                | No padding |
+| `xs`   | `section-padding-xs`  | `py-12`  |
+| `sm`   | `section-padding-sm`  | `py-16`  |
+| `md`   | `section-padding`     | `py-24`  |
+| `lg`   | `section-padding-lg`  | `py-32`  |
+| `xl`   | `section-padding-xl`  | `py-48`  |
+
+These presets resolve to the same value at every breakpoint. Use `paddingTop` / `paddingBottom` if you want asymmetric vertical rhythm — those still bump on `md:`.
+
+## Usage
+
+```astro
+---
+import SectionMain from "@components/SectionMain.astro";
+---
+
+<!-- Standard section -->
+<SectionMain>
+  <h2 class="h2">Features</h2>
+  <p>Content goes here</p>
+</SectionMain>
+
+<!-- Tight section with top border, no content padding -->
+<SectionMain padding="xs" contentPadding="none" borderTop={true}>
+  <div class="grid grid-cols-3">...</div>
+</SectionMain>
+
+<!-- Section with anchor link target -->
+<SectionMain id="pricing" padding="lg">
+  <h2 class="h2">Pricing</h2>
+</SectionMain>
+```
+
+## Notes
+
+- The pattern gutters are purely decorative — they create the "blueprint" aesthetic with diagonal stripes and vertical borders.
+- `contentClass` lets you add things like `items-center` to the flex column without overriding the base layout classes.
+- Components like `FlowSteps` already manage their own grid and padding — wrap them in `SectionMain padding="none" contentPadding="none"` so you don't double-indent.
