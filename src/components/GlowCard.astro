@@ -1,0 +1,398 @@
+---
+// GlowCard — Astro port of a React BorderGlow card. Tracks the pointer
+// position over the card, projects it onto a conic-gradient mask aimed at
+// the cursor, and reveals a mesh-gradient border + soft outer glow only on
+// the side the cursor is closest to. Optional `animated` plays a one-shot
+// sweep on mount so the effect is visible without interaction.
+//
+// Renders as a self-contained card — pass children in the default slot.
+//
+// Usage:
+//   <GlowCard>
+//     <div class="p-8">Hello</div>
+//   </GlowCard>
+
+interface Props {
+  /** Edge proximity (0..1) at which the glow starts to ramp on. Higher = tighter to the edge. */
+  edgeSensitivity?: number;
+  /** Glow color as `H S% L%` (no `hsl()` wrapper). */
+  glowColor?: string;
+  /** Card background color (any CSS color). */
+  backgroundColor?: string;
+  /** Corner radius in px. */
+  borderRadius?: number;
+  /** Outer glow radius in px. */
+  glowRadius?: number;
+  /** Glow intensity multiplier (0..1+). */
+  glowIntensity?: number;
+  /** Width of the lit cone behind the cursor, in % of the conic. */
+  coneSpread?: number;
+  /** Play a one-shot sweep animation on mount. */
+  animated?: boolean;
+  /** Mesh-gradient palette. 1–3 colors, repeated to fill 7 stops. */
+  colors?: [string, string?, string?] | string[];
+  /** Opacity of the mesh fill layer (0..1). */
+  fillOpacity?: number;
+  class?: string;
+}
+
+const {
+  edgeSensitivity = 30,
+  glowColor = "40 80% 80%",
+  backgroundColor = "#120F17",
+  borderRadius = 28,
+  glowRadius = 40,
+  glowIntensity = 1.0,
+  coneSpread = 25,
+  animated = false,
+  colors = ["#c084fc", "#f472b6", "#38bdf8"],
+  fillOpacity = 0.5,
+  class: className,
+} = Astro.props;
+
+// --- Mesh gradient palette baked at build time ---------------------------
+const GRADIENT_POSITIONS = [
+  "80% 55%", "69% 34%", "8% 6%", "41% 38%", "86% 85%", "82% 18%", "51% 4%",
+];
+const COLOR_MAP = [0, 1, 2, 0, 1, 2, 1];
+
+const meshGradients = GRADIENT_POSITIONS.map((pos, i) => {
+  const c = colors[Math.min(COLOR_MAP[i], colors.length - 1)];
+  return `radial-gradient(at ${pos}, ${c} 0px, transparent 50%)`;
+});
+meshGradients.push(`linear-gradient(${colors[0]} 0 100%)`);
+
+// --- Box-shadow stack for the outer glow ---------------------------------
+const parseHSL = (str: string) => {
+  const m = str.match(/([\d.]+)\s*([\d.]+)%?\s*([\d.]+)%?/);
+  return m
+    ? { h: parseFloat(m[1]), s: parseFloat(m[2]), l: parseFloat(m[3]) }
+    : { h: 40, s: 80, l: 80 };
+};
+const { h, s, l } = parseHSL(glowColor);
+
+const layers: Array<[number, number, number, number, number, boolean]> = [
+  [0, 0, 0, 1, 100, true],  [0, 0, 1, 0, 60, true],   [0, 0, 3, 0, 50, true],
+  [0, 0, 6, 0, 40, true],   [0, 0, 15, 0, 30, true],  [0, 0, 25, 2, 20, true],
+  [0, 0, 50, 2, 10, true],
+  [0, 0, 1, 0, 60, false],  [0, 0, 3, 0, 50, false],  [0, 0, 6, 0, 40, false],
+  [0, 0, 15, 0, 30, false], [0, 0, 25, 2, 20, false], [0, 0, 50, 2, 10, false],
+];
+const boxShadow = layers
+  .map(([x, y, blur, spread, alpha, inset]) => {
+    const a = Math.min(alpha * glowIntensity, 100);
+    return `${inset ? "inset " : ""}${x}px ${y}px ${blur}px ${spread}px hsl(${h}deg ${s}% ${l}% / ${a}%)`;
+  })
+  .join(", ");
+
+// --- Background composites for border + fill layers ----------------------
+const borderBg = [
+  `linear-gradient(${backgroundColor} 0 100%) padding-box`,
+  "linear-gradient(rgb(255 255 255 / 0%) 0% 100%) border-box",
+  ...meshGradients.map((g) => `${g} border-box`),
+].join(", ");
+
+const fillBg = meshGradients.map((g) => `${g} padding-box`).join(", ");
+
+// Pre-built mask strings — interpolating the conic angle via CSS var.
+const borderMask = `conic-gradient(from var(--gc-angle, 45deg) at center, black ${coneSpread}%, transparent ${coneSpread + 15}%, transparent ${100 - coneSpread - 15}%, black ${100 - coneSpread}%)`;
+
+const fillMaskLayers = [
+  "linear-gradient(to bottom, black, black)",
+  "radial-gradient(ellipse at 50% 50%, black 40%, transparent 65%)",
+  "radial-gradient(ellipse at 66% 66%, black 5%, transparent 40%)",
+  "radial-gradient(ellipse at 33% 33%, black 5%, transparent 40%)",
+  "radial-gradient(ellipse at 66% 33%, black 5%, transparent 40%)",
+  "radial-gradient(ellipse at 33% 66%, black 5%, transparent 40%)",
+  `conic-gradient(from var(--gc-angle, 45deg) at center, transparent 5%, black 15%, black 85%, transparent 95%)`,
+].join(", ");
+
+const glowMask = `conic-gradient(from var(--gc-angle, 45deg) at center, black 2.5%, transparent 10%, transparent 90%, black 97.5%)`;
+---
+
+<div
+  data-glow-card
+  data-edge-sensitivity={edgeSensitivity}
+  data-animated={animated ? "true" : undefined}
+  class:list={["glow-card", className]}
+  style={{
+    background: backgroundColor,
+    borderRadius: `${borderRadius}px`,
+    "--gc-angle": "45deg",
+    "--gc-border-opacity": "0",
+    "--gc-glow-opacity": "0",
+  }}
+>
+  {/* Mesh gradient border — only the side facing the cursor is unmasked. */}
+  <div
+    class="glow-card__border"
+    style={{
+      background: borderBg,
+      maskImage: borderMask,
+      WebkitMaskImage: borderMask,
+    }}
+  ></div>
+
+  {/* Mesh gradient fill — bleeds in from the edges, brightest near cursor. */}
+  <div
+    class="glow-card__fill"
+    style={{
+      background: fillBg,
+      maskImage: fillMaskLayers,
+      WebkitMaskImage: fillMaskLayers,
+      "--gc-fill-opacity": `${fillOpacity}`,
+    }}
+  ></div>
+
+  {/* Outer halo — a soft box-shadow wedge masked to the lit side. */}
+  <span
+    class="glow-card__glow"
+    style={{
+      inset: `${-glowRadius}px`,
+      maskImage: glowMask,
+      WebkitMaskImage: glowMask,
+    }}
+  >
+    <span
+      class="glow-card__glow-inner"
+      style={{
+        inset: `${glowRadius}px`,
+        boxShadow,
+      }}
+    ></span>
+  </span>
+
+  <div class="glow-card__content">
+    <slot />
+  </div>
+</div>
+
+<style is:global>
+  [data-glow-card] {
+    position: relative;
+    display: grid;
+    isolation: isolate;
+    border: 1px solid rgb(255 255 255 / 0.15);
+    transform: translate3d(0, 0, 0.01px);
+    box-shadow:
+      rgba(0, 0, 0, 0.1) 0 1px 2px,
+      rgba(0, 0, 0, 0.1) 0 2px 4px,
+      rgba(0, 0, 0, 0.1) 0 4px 8px,
+      rgba(0, 0, 0, 0.1) 0 8px 16px,
+      rgba(0, 0, 0, 0.1) 0 16px 32px,
+      rgba(0, 0, 0, 0.1) 0 32px 64px;
+  }
+
+  .glow-card__border,
+  .glow-card__fill {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border: 1px solid transparent;
+    border-radius: inherit;
+    pointer-events: none;
+    transition: opacity 0.75s ease-in-out;
+  }
+
+  .glow-card__border {
+    opacity: var(--gc-border-opacity, 0);
+  }
+
+  .glow-card__fill {
+    opacity: calc(var(--gc-border-opacity, 0) * var(--gc-fill-opacity, 0.5));
+    mix-blend-mode: soft-light;
+    /* Subtractive composite: the linear-gradient base minus the central
+       radial, plus the corner radials, all gated by the cursor cone. */
+    mask-composite: subtract, add, add, add, add, add;
+    -webkit-mask-composite: source-out, source-over, source-over, source-over,
+      source-over, source-over;
+  }
+
+  .glow-card__glow {
+    position: absolute;
+    z-index: 1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: var(--gc-glow-opacity, 0);
+    mix-blend-mode: plus-lighter;
+    transition: opacity 0.75s ease-in-out;
+  }
+
+  .glow-card__glow-inner {
+    position: absolute;
+    border-radius: inherit;
+  }
+
+  .glow-card__content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    border-radius: inherit;
+  }
+
+  /* Snappier transitions while the card is actively lit. */
+  [data-glow-card][data-gc-visible="true"] .glow-card__border,
+  [data-glow-card][data-gc-visible="true"] .glow-card__fill,
+  [data-glow-card][data-gc-visible="true"] .glow-card__glow {
+    transition: opacity 0.25s ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-glow-card][data-animated="true"] .glow-card__border,
+    [data-glow-card][data-animated="true"] .glow-card__fill,
+    [data-glow-card][data-animated="true"] .glow-card__glow {
+      transition: none !important;
+    }
+  }
+</style>
+
+<script>
+  type GlowEl = HTMLElement;
+
+  const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+  const easeInCubic = (t: number) => t * t * t;
+
+  const animate = (
+    duration: number,
+    delay: number,
+    ease: (t: number) => number,
+    onUpdate: (v: number) => void,
+    onEnd?: () => void,
+  ) => {
+    const start = performance.now() + delay;
+    const tick = () => {
+      const t = Math.max(0, Math.min((performance.now() - start) / duration, 1));
+      onUpdate(ease(t));
+      if (t < 1) requestAnimationFrame(tick);
+      else onEnd?.();
+    };
+    setTimeout(() => requestAnimationFrame(tick), delay);
+  };
+
+  const center = (el: GlowEl): [number, number] => {
+    const { width, height } = el.getBoundingClientRect();
+    return [width / 2, height / 2];
+  };
+
+  const edgeProximity = (el: GlowEl, x: number, y: number) => {
+    const [cx, cy] = center(el);
+    const dx = x - cx;
+    const dy = y - cy;
+    const kx = dx === 0 ? Infinity : cx / Math.abs(dx);
+    const ky = dy === 0 ? Infinity : cy / Math.abs(dy);
+    return Math.min(Math.max(1 / Math.min(kx, ky), 0), 1);
+  };
+
+  const cursorAngle = (el: GlowEl, x: number, y: number) => {
+    const [cx, cy] = center(el);
+    const dx = x - cx;
+    const dy = y - cy;
+    if (dx === 0 && dy === 0) return 0;
+    let deg = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+    if (deg < 0) deg += 360;
+    return deg;
+  };
+
+  const initOne = (root: GlowEl) => {
+    if (root.dataset.scriptInitialized) return;
+    root.dataset.scriptInitialized = "true";
+
+    const sensitivity =
+      Number(root.getAttribute("data-edge-sensitivity")) || 30;
+    const animated = root.getAttribute("data-animated") === "true";
+
+    let hovered = false;
+    let sweep = false;
+    let lastAngle = 45;
+    let lastEdge = 0;
+
+    const apply = () => {
+      const visible = hovered || sweep;
+      const colorSensitivity = sensitivity + 20;
+      const borderOpacity = visible
+        ? Math.max(
+            0,
+            (lastEdge * 100 - colorSensitivity) / (100 - colorSensitivity),
+          )
+        : 0;
+      const glowOpacity = visible
+        ? Math.max(0, (lastEdge * 100 - sensitivity) / (100 - sensitivity))
+        : 0;
+
+      root.style.setProperty("--gc-angle", `${lastAngle.toFixed(3)}deg`);
+      root.style.setProperty("--gc-border-opacity", `${borderOpacity}`);
+      root.style.setProperty("--gc-glow-opacity", `${glowOpacity}`);
+      root.dataset.gcVisible = visible ? "true" : "false";
+    };
+
+    root.addEventListener("pointermove", (e) => {
+      const r = root.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      const y = e.clientY - r.top;
+      lastAngle = cursorAngle(root, x, y);
+      lastEdge = edgeProximity(root, x, y);
+      apply();
+    });
+
+    root.addEventListener("pointerenter", () => {
+      hovered = true;
+      apply();
+    });
+
+    root.addEventListener("pointerleave", () => {
+      hovered = false;
+      apply();
+    });
+
+    if (animated) {
+      const ANGLE_START = 110;
+      const ANGLE_END = 465;
+      sweep = true;
+      lastAngle = ANGLE_START;
+
+      // 1. Edge proximity ramps in.
+      animate(500, 0, easeOutCubic, (v) => {
+        lastEdge = v;
+        apply();
+      });
+
+      // 2. Angle eases through the first half (slow start).
+      animate(1500, 0, easeInCubic, (v) => {
+        lastAngle = (ANGLE_END - ANGLE_START) * (v * 0.5) + ANGLE_START;
+        apply();
+      });
+
+      // 3. Angle eases through the second half (slow finish).
+      animate(2250, 1500, easeOutCubic, (v) => {
+        lastAngle =
+          (ANGLE_END - ANGLE_START) * (0.5 + v * 0.5) + ANGLE_START;
+        apply();
+      });
+
+      // 4. Edge proximity ramps out, ending the sweep.
+      animate(
+        1500,
+        2500,
+        easeInCubic,
+        (v) => {
+          lastEdge = 1 - v;
+          apply();
+        },
+        () => {
+          sweep = false;
+          apply();
+        },
+      );
+    }
+  };
+
+  const initAll = () =>
+    document
+      .querySelectorAll<GlowEl>("[data-glow-card]")
+      .forEach(initOne);
+
+  initAll();
+  document.addEventListener("astro:page-load", initAll);
+</script>

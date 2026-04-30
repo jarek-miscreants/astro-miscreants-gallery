@@ -10,9 +10,16 @@ import Nav from "../components/NavMorph.astro";
 import AnnouncementBanner from "../components/AnnouncementBanner.astro";
 interface Props {
   title?: string;
+  /** Theme attribute applied at the document root — flips tokens for the whole page (nav included). */
+  theme?: "light" | "dark" | "brand";
+  /** Frontmatter object, present when this layout is used from a Markdown/MDX page. */
+  frontmatter?: { title?: string; theme?: "light" | "dark" | "brand" };
 }
 
-const { title = "Astro Playground" } = Astro.props;
+// MDX/Markdown pages with `layout:` pass their frontmatter under `frontmatter`,
+// while `.astro` pages pass props flat. Fall back so both work.
+const fm = Astro.props.frontmatter ?? {};
+const { title = fm.title ?? "Astro Playground", theme = fm.theme ?? "light" } = Astro.props;
 const gtagId = import.meta.env.PUBLIC_GTAG_ID;
 
 // Pick the currently-active announcement, if any.
@@ -38,7 +45,7 @@ const AnnouncementContent = announcement
 
 ---
 
-<html lang="en" data-theme="light">
+<html lang="en" data-theme={theme}>
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

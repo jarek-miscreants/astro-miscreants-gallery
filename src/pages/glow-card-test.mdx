@@ -1,0 +1,185 @@
+---
+layout: ../layouts/Layout.astro
+title: GlowCard test
+theme: dark
+---
+
+import GlowCard from "@components/GlowCard.astro";
+import Grainient from "@components/Grainient.astro";
+import SectionMain from "@components/SectionMain.astro";
+
+<SectionMain id="glow-card-hero" paddingTop="lg" paddingBottom="md" contentPadding="default">
+
+# GlowCard test
+
+Standalone test page for `GlowCard` and `Grainient` — not listed in the components index. Move the cursor over each card to see the cone-masked border + halo follow it. The hero below is a live WebGL2 grainy gradient.
+
+</SectionMain>
+
+<SectionMain id="grainient-hero" padding="none" borderTop>
+
+<div class="relative h-[60vh] min-h-[420px] w-full">
+  <Grainient
+    color1="#FF9FFC"
+    color2="#5227FF"
+    color3="#0a0a0a"
+    grainAnimated
+  />
+  <div class="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center text-white mix-blend-difference">
+    <p class="text-xs uppercase tracking-[0.2em] text-white/70">Live WebGL2</p>
+    <h2 class="mt-3 text-4xl font-semibold sm:text-5xl">Grainient</h2>
+    <p class="mt-4 max-w-md text-sm text-white/80">
+      Three-color smoothstep blend, sin-warp, animated grain. Single fragment shader, no
+      external libraries.
+    </p>
+  </div>
+</div>
+
+</SectionMain>
+
+<SectionMain id="grainient-variants" padding="md" borderTop>
+
+<div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+
+  <div class="relative aspect-square overflow-hidden border border-stroke">
+    <Grainient
+        color1="#38bdf8"
+      color2="#22d3ee"
+      color3="#0a1024"
+      blendAngle={45}
+      warpFrequency={3}
+    />
+    <div class="absolute inset-0 flex items-end p-5 text-white">
+      <span class="text-xs uppercase tracking-wider">Cool</span>
+    </div>
+  </div>
+
+  <div class="relative aspect-square overflow-hidden border border-stroke">
+    <Grainient
+        color1="#fbbf24"
+      color2="#f43f5e"
+      color3="#1a0a14"
+      timeSpeed={0.5}
+      blendAngle={120}
+    />
+    <div class="absolute inset-0 flex items-end p-5 text-white">
+      <span class="text-xs uppercase tracking-wider">Sunset</span>
+    </div>
+  </div>
+
+  <div class="relative aspect-square overflow-hidden border border-stroke">
+    <Grainient
+        color1="#86efac"
+      color2="#4ade80"
+      color3="#031412"
+      grainAmount={0.2}
+      grainScale={4}
+      grainAnimated
+    />
+    <div class="absolute inset-0 flex items-end p-5 text-white">
+      <span class="text-xs uppercase tracking-wider">Forest, heavy grain</span>
+    </div>
+  </div>
+
+</div>
+
+</SectionMain>
+
+<SectionMain id="glow-card-grid" padding="md" borderTop>
+
+<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+
+  <GlowCard>
+    <div class="p-8 text-white">
+      <p class="text-xs uppercase tracking-wider text-white/50">Default</p>
+      <h2 class="mt-2 text-2xl font-semibold">Hover the edges</h2>
+      <p class="mt-3 text-sm text-white/70">
+        Default palette — purple, pink, sky. The conic mask reveals only the side of the border
+        the cursor is closest to, so the glow follows you around the card.
+      </p>
+    </div>
+  </GlowCard>
+
+  <GlowCard
+    glowColor="200 90% 70%"
+    colors={["#38bdf8", "#22d3ee", "#818cf8"]}
+    backgroundColor="#0a1024"
+  >
+    <div class="p-8 text-white">
+      <p class="text-xs uppercase tracking-wider text-white/50">Cool palette</p>
+      <h2 class="mt-2 text-2xl font-semibold">Cyan / indigo</h2>
+      <p class="mt-3 text-sm text-white/70">
+        Custom mesh palette + matching glow color. Background swapped for a deep navy so the
+        cool gradients read cleanly.
+      </p>
+    </div>
+  </GlowCard>
+
+  <GlowCard
+    glowColor="350 90% 70%"
+    colors={["#f472b6", "#fb7185", "#fbbf24"]}
+    backgroundColor="#1a0a14"
+    coneSpread={35}
+    glowIntensity={1.4}
+  >
+    <div class="p-8 text-white">
+      <p class="text-xs uppercase tracking-wider text-white/50">Wide cone, brighter halo</p>
+      <h2 class="mt-2 text-2xl font-semibold">Sunset</h2>
+      <p class="mt-3 text-sm text-white/70">
+        <code class="text-xs">coneSpread=35</code> widens the lit arc;{" "}
+        <code class="text-xs">glowIntensity=1.4</code> pumps the outer halo.
+      </p>
+    </div>
+  </GlowCard>
+
+  <GlowCard
+    animated
+    glowColor="120 80% 70%"
+    colors={["#86efac", "#4ade80", "#22d3ee"]}
+    backgroundColor="#031412"
+  >
+    <div class="p-8 text-white">
+      <p class="text-xs uppercase tracking-wider text-white/50">Animated sweep</p>
+      <h2 class="mt-2 text-2xl font-semibold">Plays on mount</h2>
+      <p class="mt-3 text-sm text-white/70">
+        <code class="text-xs">animated</code> triggers a one-shot conic sweep on mount, so the
+        glow advertises itself before any hover.
+      </p>
+    </div>
+  </GlowCard>
+
+  <GlowCard
+    borderRadius={4}
+    glowRadius={60}
+    edgeSensitivity={10}
+  >
+    <div class="p-8 text-white">
+      <p class="text-xs uppercase tracking-wider text-white/50">Sharp + sensitive</p>
+      <h2 class="mt-2 text-2xl font-semibold">Tight corners</h2>
+      <p class="mt-3 text-sm text-white/70">
+        <code class="text-xs">borderRadius=4</code> for sharp corners,{" "}
+        <code class="text-xs">edgeSensitivity=10</code> so the glow ramps on earlier — visible
+        even when the cursor is closer to the centre.
+      </p>
+    </div>
+  </GlowCard>
+
+  <GlowCard
+    fillOpacity={1}
+    colors={["#a78bfa", "#f0abfc", "#fde68a"]}
+    glowColor="280 80% 75%"
+    backgroundColor="#150a24"
+  >
+    <div class="p-8 text-white">
+      <p class="text-xs uppercase tracking-wider text-white/50">Heavy fill</p>
+      <h2 class="mt-2 text-2xl font-semibold">Mesh bleeds in</h2>
+      <p class="mt-3 text-sm text-white/70">
+        <code class="text-xs">fillOpacity=1</code> lets the mesh-gradient fill saturate near
+        the cursor, giving a more "lit-from-inside" feel.
+      </p>
+    </div>
+  </GlowCard>
+
+</div>
+
+</SectionMain>
