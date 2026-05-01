@@ -44,6 +44,9 @@ interface Props {
   minScore?: number;
   /** Auto-focus the input on mount. */
   autofocus?: boolean;
+  /** Render a ⌘K / Ctrl+K badge and bind a document-level shortcut to focus
+   *  the input. The badge auto-hides while the input has text. */
+  shortcut?: boolean;
   class?: string;
 }
 
@@ -59,6 +62,7 @@ const {
   debounce = 80,
   minScore = 0.08,
   autofocus = false,
+  shortcut = false,
   class: className,
 } = Astro.props;
 
@@ -72,6 +76,7 @@ const inputId = id ?? `search-${Math.random().toString(36).slice(2, 10)}`;
   data-empty-selector={emptySelector}
   data-debounce={debounce}
   data-min-score={minScore}
+  data-shortcut={shortcut ? "true" : undefined}
   class:list={["search", className]}
 >
   <label for={inputId} class:list={["search__label", labelHidden && "sr-only"]}>
@@ -105,7 +110,14 @@ const inputId = id ?? `search-${Math.random().toString(36).slice(2, 10)}`;
       spellcheck="false"
       autofocus={autofocus}
       aria-controls={emptySelector ? undefined : undefined}
+      aria-keyshortcuts={shortcut ? "Meta+K Control+K" : undefined}
     />
+    {shortcut && (
+      <kbd class="search__shortcut" data-search-shortcut aria-hidden="true">
+        <span data-search-shortcut-mod>Ctrl</span>
+        <span>K</span>
+      </kbd>
+    )}
     <button
       type="button"
       class="search__clear"
@@ -186,6 +198,32 @@ const inputId = id ?? `search-${Math.random().toString(36).slice(2, 10)}`;
   }
   .search__clear[hidden] { display: none; }
 
+  /* Cmd/Ctrl+K hint badge — sits at the right edge of the input.
+     Hidden when the input has text (the clear button takes its place). */
+  .search__shortcut {
+    position: absolute;
+    right: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.1875rem;
+    padding: 0.125rem 0.375rem;
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--color-fg-muted);
+    background: var(--color-panel-muted);
+    border: 1px solid var(--color-stroke);
+    pointer-events: none;
+    user-select: none;
+  }
+  .search__shortcut[hidden] { display: none; }
+
+  /* Make room for the badge so placeholder/value text doesn't slide under it. */
+  [data-shortcut="true"] .search__input {
+    padding-right: 4rem;
+  }
+
   /* Highlight inside item text — opt-in by wrapping in <mark data-search-mark>. */
   [data-search-mark] {
     background: color-mix(in srgb, var(--color-intent) 22%, transparent);
@@ -253,6 +291,14 @@ const inputId = id ?? `search-${Math.random().toString(36).slice(2, 10)}`;
     };
   }
 
+  const isMacLike = () => {
+    const nav = navigator as Navigator & {
+      userAgentData?: { platform?: string };
+    };
+    const platform = nav.userAgentData?.platform || navigator.platform || "";
+    return /Mac|iPhone|iPad|iPod/i.test(platform);
+  };
+
   const initOne = (root: HTMLElement) => {
     if (root.dataset.scriptInitialized) return;
     root.dataset.scriptInitialized = "true";
@@ -260,7 +306,22 @@ const inputId = id ?? `search-${Math.random().toString(36).slice(2, 10)}`;
     const input = root.querySelector<HTMLInputElement>(".search__input");
     const clear = root.querySelector<HTMLButtonElement>("[data-search-clear]");
     const status = root.querySelector<HTMLElement>("[data-search-status]");
+    const shortcut = root.querySelector<HTMLElement>("[data-search-shortcut]");
     if (!input) return;
+
+    if (shortcut) {
+      const mod = shortcut.querySelector<HTMLElement>("[data-search-shortcut-mod]");
+      if (mod && isMacLike()) mod.textContent = "⌘"; // ⌘
+
+      const onShortcut = (e: KeyboardEvent) => {
+        const isMod = isMacLike() ? e.metaKey : e.ctrlKey;
+        if (!isMod || e.key.toLowerCase() !== "k") return;
+        e.preventDefault();
+        input.focus();
+        input.select();
+      };
+      document.addEventListener("keydown", onShortcut);
+    }
 
     const targetSelector = root.getAttribute("data-target-selector") || "";
     const groupSelector = root.getAttribute("data-group-selector") || "";
@@ -304,8 +365,9 @@ const inputId = id ?? `search-${Math.random().toString(36).slice(2, 10)}`;
         empty.toggleAttribute("hidden", visible !== 0 || query === "");
       }
 
-      // Toggle clear button.
+      // Toggle clear button + shortcut hint (mutually exclusive — same slot).
       if (clear) clear.toggleAttribute("hidden", query === "");
+      if (shortcut) shortcut.toggleAttribute("hidden", query !== "");
 
       // Update SR status.
       if (status) {

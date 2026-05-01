@@ -100,9 +100,29 @@ const statuses = [...new Set(all.map((c) => c.data.status))];
           type="search"
           placeholder="Search…"
           aria-label="Search components"
+          aria-keyshortcuts="Meta+K Control+K"
           autocomplete="off"
-          class="w-full border border-stroke bg-panel py-2 pr-3 pl-8 text-sm text-fg placeholder:text-fg-subtle outline-none focus:border-focus"
+          class="w-full border border-stroke bg-panel py-2 pr-14 pl-8 text-sm text-fg placeholder:text-fg-subtle outline-none focus:border-focus"
         />
+        <kbd
+          data-gallery-search-shortcut
+          aria-hidden="true"
+          class="pointer-events-none absolute top-1/2 right-1.5 inline-flex -translate-y-1/2 items-center gap-0.5 border border-stroke bg-panel-muted px-1.5 py-0.5 font-sans text-[10px] font-medium leading-none text-fg-muted select-none"
+        >
+          <span data-gallery-search-shortcut-mod>Ctrl</span>
+          <span>K</span>
+        </kbd>
+        <button
+          type="button"
+          data-gallery-search-clear
+          aria-label="Clear search"
+          hidden
+          class="absolute top-1/2 right-2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center text-fg-muted hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
       <select
@@ -211,6 +231,12 @@ const statuses = [...new Set(all.map((c) => c.data.status))];
     padding-right: 2rem;
   }
 
+  /* Strip the browser-supplied search clear UI — we render our own. */
+  [data-gallery-search]::-webkit-search-cancel-button,
+  [data-gallery-search]::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+  }
 </style>
 
 <script>
@@ -230,6 +256,14 @@ const statuses = [...new Set(all.map((c) => c.data.status))];
     return qi === lq.length;
   };
 
+  const isMacLike = () => {
+    const nav = navigator as Navigator & {
+      userAgentData?: { platform?: string };
+    };
+    const platform = nav.userAgentData?.platform || navigator.platform || "";
+    return /Mac|iPhone|iPad|iPod/i.test(platform);
+  };
+
   const init = () => {
     const searchInput = document.querySelector<HTMLInputElement>(
       "[data-gallery-search]",
@@ -247,7 +281,26 @@ const statuses = [...new Set(all.map((c) => c.data.status))];
     const filterSelects = Array.from(
       document.querySelectorAll<HTMLSelectElement>("[data-gallery-filter]"),
     );
+    const shortcutBadge = document.querySelector<HTMLElement>(
+      "[data-gallery-search-shortcut]",
+    );
+    const shortcutMod = shortcutBadge?.querySelector<HTMLElement>(
+      "[data-gallery-search-shortcut-mod]",
+    );
+    const searchClear = document.querySelector<HTMLButtonElement>(
+      "[data-gallery-search-clear]",
+    );
     if (!searchInput || items.length === 0) return;
+
+    if (shortcutMod && isMacLike()) shortcutMod.textContent = "⌘";
+
+    document.addEventListener("keydown", (e) => {
+      const isMod = isMacLike() ? e.metaKey : e.ctrlKey;
+      if (!isMod || e.key.toLowerCase() !== "k") return;
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    });
 
     const state: Filters = { search: "", category: "", status: "" };
 
@@ -268,9 +321,36 @@ const statuses = [...new Set(all.map((c) => c.data.status))];
       if (empty) empty.toggleAttribute("hidden", visible !== 0);
     };
 
+    // Badge + clear button share the same right-edge slot — exactly one
+    // visible at a time depending on whether the input has text.
+    const updateRightSlot = () => {
+      const hasText = searchInput.value !== "";
+      if (shortcutBadge) shortcutBadge.toggleAttribute("hidden", hasText);
+      if (searchClear) searchClear.toggleAttribute("hidden", !hasText);
+    };
+
     searchInput.addEventListener("input", () => {
       state.search = searchInput.value.trim();
       apply();
+      updateRightSlot();
+    });
+
+    searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && searchInput.value !== "") {
+        e.preventDefault();
+        searchInput.value = "";
+        state.search = "";
+        apply();
+        updateRightSlot();
+      }
+    });
+
+    searchClear?.addEventListener("click", () => {
+      searchInput.value = "";
+      state.search = "";
+      apply();
+      updateRightSlot();
+      searchInput.focus();
     });
 
     for (const sel of filterSelects) {
@@ -290,6 +370,7 @@ const statuses = [...new Set(all.map((c) => c.data.status))];
         state[key] = "";
       }
       apply();
+      updateRightSlot();
     });
   };
 

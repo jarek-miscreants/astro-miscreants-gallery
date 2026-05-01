@@ -14,7 +14,7 @@ import Search from "@components/Search.astro";
 
 Lightweight client-side search. Drop the input above any list of items, point it at them with a CSS selector, and the script hides anything that doesn't match the query. Matching is fuzzy (subsequence) with bonuses for prefix matches and word-boundary hits, so `"btn"` finds **B**u**t**to**n**, `"drp"` finds **D**ropdown, etc.
 
-It's wired into the live [Components index](/components/) at the top of the page — try it there to see fuzzy scoring against this exact list.
+A working example is wired into the [gallery home page](/) — try fuzzy queries against the real component list.
 
 ## Preview
 
@@ -103,7 +103,7 @@ import Search from "@components/Search.astro";
 
 ## Wiring to a content collection
 
-Items rendered from a content collection just need their text concatenated into `data-search-text`. The full setup used by the live [Components index](/components/):
+Items rendered from a content collection just need their text concatenated into `data-search-text`. A typical setup:
 
 ```astro
 ---
