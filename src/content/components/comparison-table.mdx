@@ -1,0 +1,247 @@
+---
+title: ComparisonTable
+description: Plan / feature comparison grid with sticky header, semantic cell types (text, pill, included/not-included), and container-query mobile reflow.
+category: block
+order: 22
+sourceFile: src/components/ComparisonTable.astro
+status: stable
+related: [Tag, Tabs]
+---
+
+import Preview from "@components/_docs/Preview.astro";
+import PropsTable from "@components/_docs/PropsTable.astro";
+import ComparisonTable from "@components/ComparisonTable.astro";
+
+A pricing / plan comparison grid. Pass an array of `plans` (column headers) and `rows` (one row per feature). Each cell is one of three shapes: a text `value`, a small `pill`, or a boolean `included` flag that renders a check or minus icon.
+
+Built with semantic ARIA roles (`table` / `row` / `columnheader` / `rowheader` / `cell`) and a CSS Grid layout that stays aligned across columns. The sticky header keeps plan names visible while you scroll long row lists. On narrow widths the layout reflows to stack each row's name above its cells — driven by a container query, so the breakpoint follows the table's own width rather than the viewport's.
+
+## Preview
+
+<Preview label="Pricing plans" align="stretch" padding="none">
+  <ComparisonTable
+    plans={[
+      { name: "Hobby", meta: "Free" },
+      { name: "Studio", meta: "$19 / mo" },
+      { name: "Agency", meta: "$49 / mo" },
+      { name: "Enterprise", meta: "Custom" },
+    ]}
+    rows={[
+      {
+        label: "Component access",
+        cells: [
+          { value: "24" },
+          { value: "All 160 +" },
+          { value: "All 160 +" },
+          { value: "All 160 +" },
+        ],
+      },
+      {
+        label: "React components",
+        cells: [
+          { included: false },
+          { included: true },
+          { included: true },
+          { included: true },
+        ],
+      },
+      {
+        label: "Framer components",
+        cells: [
+          { included: false },
+          { pill: "Beta" },
+          { included: true },
+          { included: true },
+        ],
+      },
+      {
+        label: "Webflow files",
+        cells: [
+          { included: true },
+          { included: true },
+          { included: true },
+          { included: true },
+        ],
+      },
+      {
+        label: "Custom code access",
+        cells: [
+          { included: true },
+          { included: true },
+          { included: true },
+          { included: true },
+        ],
+      },
+      {
+        label: "CMS compatibility",
+        cells: [
+          { included: true },
+          { included: true },
+          { included: true },
+          { included: true },
+        ],
+      },
+      {
+        label: "Project license",
+        cells: [
+          { value: "1 site" },
+          { value: "5 sites" },
+          { value: "Unlimited" },
+          { value: "Unlimited" },
+        ],
+      },
+      {
+        label: "Update cadence",
+        cells: [
+          { value: "Quarterly" },
+          { value: "Monthly" },
+          { value: "Weekly" },
+          { value: "Continuous" },
+        ],
+      },
+      {
+        label: "Team seats",
+        cells: [
+          { value: "1" },
+          { value: "3" },
+          { value: "10" },
+          { value: "Unlimited" },
+        ],
+      },
+      {
+        label: "Premium support",
+        cells: [
+          { included: false },
+          { value: "48h email" },
+          { value: "24h email" },
+          { value: "Slack instant" },
+        ],
+      },
+      {
+        label: "Onboarding session",
+        cells: [
+          { included: false },
+          { pill: "Soon" },
+          { value: "1 hour" },
+          { value: "Custom" },
+        ],
+      },
+    ]}
+  />
+</Preview>
+
+<Preview label="Three plans, shorter list" align="stretch" padding="none">
+  <ComparisonTable
+    ariaLabel="Workspace tier comparison"
+    plans={[
+      { name: "Solo", meta: "Free" },
+      { name: "Team", meta: "$12 / seat" },
+      { name: "Org", meta: "Custom" },
+    ]}
+    rows={[
+      {
+        label: "Workspaces",
+        cells: [{ value: "1" }, { value: "10" }, { value: "Unlimited" }],
+      },
+      {
+        label: "SSO",
+        cells: [{ included: false }, { included: false }, { included: true }],
+      },
+      {
+        label: "Audit log",
+        cells: [{ included: false }, { pill: "Beta" }, { included: true }],
+      },
+      {
+        label: "Support",
+        cells: [
+          { value: "Community" },
+          { value: "48h email" },
+          { value: "Slack" },
+        ],
+      },
+    ]}
+  />
+</Preview>
+
+## Props
+
+<PropsTable props={[
+  { name: "plans", type: "ComparisonPlan[]", required: true, description: "Column headers. Each plan has a `name` and optional `meta` (price / tier label)." },
+  { name: "rows", type: "ComparisonRow[]", required: true, description: "Body rows. Each row has a `label` (rowheader) and a `cells` array. Cell count should match plans length." },
+  { name: "ariaLabel", type: "string", default: '"Plan comparison"', description: "Accessible name for the table region." },
+  { name: "class", type: "string", description: "Additional classes on the wrapper." },
+]} />
+
+### Cell shapes
+
+A cell is exactly one of:
+
+| Shape          | Renders                                                       |
+|----------------|---------------------------------------------------------------|
+| `{ value }`    | Plain text label (`fg-muted`).                                |
+| `{ pill }`     | Small pill chip (`panel-muted` background, sharp rectangle).  |
+| `{ included }` | `lucide:check` (true) or `lucide:minus` (false), color-coded. |
+
+```ts
+type ComparisonPlan = { name: string; meta?: string };
+
+type ComparisonCell =
+  | { value: string }
+  | { pill: string }
+  | { included: boolean };
+
+type ComparisonRow = { label: string; cells: ComparisonCell[] };
+```
+
+## Accessibility
+
+- Root is `role="table"` with the `ariaLabel` prop wired to `aria-label` so screen readers announce a region name.
+- Plan columns are `role="columnheader"`; row labels are `role="rowheader"`. Screen readers tie each cell to both, so a check-icon cell announces e.g. *"Studio, React components, Included"*.
+- Icon-only cells get a redundant `aria-label="Included"` / `"Not included"` so the binary value reads even when the icon name is decorative (`aria-hidden`).
+- No interactive controls in the table itself — nothing keyboard-trappable. Tab order is unaffected.
+
+## Theming
+
+- Every color resolves through semantic tokens (`canvas`, `panel-muted`, `stroke`, `fg`, `fg-muted`, `fg-subtle`). Drop the table inside any `[data-theme="dark"]` ancestor and it inverts automatically — no per-mode overrides.
+- The accent color is `--color-fg` (which equals `--color-intent` in this monochrome system). To use a colored check, override `--comparison-icon-yes` on the wrapper in your own page CSS.
+
+## Layout
+
+- Desktop layout is a CSS Grid: `minmax(0, 1fr) repeat(--cols, minmax(0, 1fr))` — the row-label column has the same fractional width as one plan column.
+- The header is `position: sticky; top: 0` so plan names stay visible while you scroll. Make sure the table sits inside a scrollable region (or the page itself) for sticky to engage.
+- The wrapper applies `cq` (`container-type: inline-size`), so any `cqi`-based fluid type inside scales relative to the table's own width.
+- Mobile reflow triggers at `@container (max-width: 640px)` — narrower sections hit the stacked layout earlier than narrow viewports would.
+
+## CSS overrides
+
+The wrapper exposes a few CSS custom properties for per-instance tuning:
+
+| Variable                   | Default                  | Purpose                                  |
+|----------------------------|--------------------------|------------------------------------------|
+| `--comparison-row-stripe`  | `--color-panel-muted`    | Background color for even rows.          |
+| `--comparison-divider`     | `--color-stroke`         | Hairline divider between rows + header.  |
+| `--comparison-icon-yes`    | `--color-fg`             | Check icon color (included).             |
+| `--comparison-icon-no`     | `--color-fg-subtle`      | Minus icon color (not included).         |
+| `--comparison-padding-y`   | `1.25rem`                | Vertical padding inside cells.           |
+| `--comparison-padding-x`   | `1.25rem`                | Horizontal padding inside the row label. |
+
+```astro
+<ComparisonTable
+  class="my-custom"
+  plans={...}
+  rows={...}
+/>
+
+<style>
+  .my-custom {
+    --comparison-row-stripe: transparent;
+    --comparison-icon-yes: var(--color-success);
+  }
+</style>
+```
+
+## Notes
+
+- Cell counts per row should equal `plans.length` — the component renders whatever's there. Mismatched counts will leave gaps in the grid.
+- Five or more plans get visually squeezed on narrower screens before the mobile breakpoint kicks in. Consider a horizontally scrollable wrapper, or split into multiple tables, if you need to support six-plus plans on a narrow column.
+- The component does not handle "highlight a plan" styling — both columns render with equal weight. Add a column-spanning highlight by overriding the nth-child of the body grid in your own CSS.

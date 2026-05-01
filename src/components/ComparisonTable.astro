@@ -1,0 +1,282 @@
+---
+import { Icon } from "astro-icon/components";
+
+export type ComparisonPlan = {
+  name: string;
+  meta?: string;
+};
+
+export type ComparisonCell = {
+  value?: string;
+  pill?: string;
+  included?: boolean;
+};
+
+export type ComparisonRow = {
+  label: string;
+  cells: ComparisonCell[];
+};
+
+interface Props {
+  plans: ComparisonPlan[];
+  rows: ComparisonRow[];
+  ariaLabel?: string;
+  class?: string;
+}
+
+const {
+  plans,
+  rows,
+  ariaLabel = "Plan comparison",
+  class: className,
+} = Astro.props;
+---
+
+<div
+  role="table"
+  aria-label={ariaLabel}
+  data-comparison
+  class:list={["comparison cq", className]}
+  style={`--cols: ${plans.length}`}
+>
+  <div role="row" class="comparison__header">
+    <div aria-hidden="true" class="comparison__corner"></div>
+    {
+      plans.map((plan) => (
+        <div role="columnheader" class="comparison__col">
+          <p class="comparison__plan">{plan.name}</p>
+          {plan.meta && <p class="comparison__meta">{plan.meta}</p>}
+        </div>
+      ))
+    }
+  </div>
+
+  <div class="comparison__body">
+    {
+      rows.map((row) => (
+        <div role="row" class="comparison__row">
+          <div role="rowheader" class="comparison__rowname">
+            <h4 class="comparison__rowh">{row.label}</h4>
+          </div>
+          <div class="comparison__cells">
+            {row.cells.map((cell) => {
+              if ("pill" in cell) {
+                return (
+                  <div role="cell" class="comparison__cell">
+                    <span class="comparison__pill">{cell.pill}</span>
+                  </div>
+                );
+              }
+              if ("value" in cell) {
+                return (
+                  <div role="cell" class="comparison__cell">
+                    <p class="comparison__label">{cell.value}</p>
+                  </div>
+                );
+              }
+              const isIncluded = cell.included === true;
+              return (
+                <div
+                  role="cell"
+                  aria-label={isIncluded ? "Included" : "Not included"}
+                  data-included={isIncluded ? "yes" : "no"}
+                  class="comparison__cell"
+                >
+                  <Icon
+                    name={isIncluded ? "lucide:check" : "lucide:minus"}
+                    aria-hidden="true"
+                    class="comparison__icon"
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</div>
+
+<style is:global>
+  [data-comparison] {
+    --comparison-row-stripe: var(--color-panel-muted);
+    --comparison-divider: var(--color-stroke);
+    --comparison-icon-yes: var(--color-fg);
+    --comparison-icon-no: var(--color-fg-subtle);
+    --comparison-padding-y: 1.25rem;
+    --comparison-padding-x: 1.25rem;
+
+    width: 100%;
+    position: relative;
+    background: var(--color-canvas);
+    border-top: 1px solid var(--comparison-divider);
+    border-bottom: 1px solid var(--comparison-divider);
+  }
+
+  /* ---------- Header ---------- */
+  [data-comparison] .comparison__header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) repeat(var(--cols), minmax(0, 1fr));
+    background: var(--color-canvas);
+    border-bottom: 1px solid var(--comparison-divider);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  [data-comparison] .comparison__corner {
+    /* Decorative spacer aligning header columns with body columns. */
+  }
+
+  [data-comparison] .comparison__col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1.5rem 1rem;
+    min-width: 0;
+  }
+
+  [data-comparison] .comparison__plan {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin: 0;
+    color: var(--color-fg);
+    font-size: clamp(1.125rem, 1rem + 0.625cqi, 1.5rem);
+  }
+
+  [data-comparison] .comparison__meta {
+    margin: 0;
+    color: var(--color-fg-muted);
+    font-size: 0.875rem;
+    line-height: 1;
+  }
+
+  /* ---------- Body ---------- */
+  [data-comparison] .comparison__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) repeat(var(--cols), minmax(0, 1fr));
+    border-bottom: 1px solid var(--comparison-divider);
+  }
+
+  [data-comparison] .comparison__row:last-child {
+    border-bottom: 0;
+  }
+
+  [data-comparison] .comparison__row:nth-child(even) {
+    background: var(--comparison-row-stripe);
+  }
+
+  [data-comparison] .comparison__rowname {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: var(--comparison-padding-y) var(--comparison-padding-x);
+    min-width: 0;
+  }
+
+  [data-comparison] .comparison__rowh {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    line-height: 1.3;
+    letter-spacing: -0.005em;
+    margin: 0;
+    color: var(--color-fg);
+    font-size: 1rem;
+  }
+
+  [data-comparison] .comparison__cells {
+    display: contents;
+  }
+
+  [data-comparison] .comparison__cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--comparison-padding-y) 1rem;
+    min-width: 0;
+  }
+
+  [data-comparison] .comparison__label {
+    margin: 0;
+    color: var(--color-fg-muted);
+    font-size: 0.9375rem;
+    line-height: 1;
+  }
+
+  [data-comparison] .comparison__pill {
+    display: inline-flex;
+    align-items: center;
+    background: var(--color-panel-muted);
+    color: var(--color-fg);
+    border: 1px solid var(--color-stroke);
+    padding: 0.375rem 0.625rem;
+    font-size: 0.6875rem;
+    line-height: 1;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  /* Stripe row pills sit on a darker surface — switch to canvas for separation. */
+  [data-comparison] .comparison__row:nth-child(even) .comparison__pill {
+    background: var(--color-canvas);
+  }
+
+  [data-comparison] .comparison__icon {
+    display: block;
+    width: 1.125rem;
+    height: 1.125rem;
+    color: var(--comparison-icon-yes);
+  }
+
+  [data-comparison] .comparison__cell[data-included="no"] .comparison__icon {
+    color: var(--comparison-icon-no);
+  }
+
+  /* ---------- Mobile reflow ----------
+     Container query keyed to the table's width — same trigger size as the
+     source's 768px media query, but responsive to the actual table column
+     instead of the viewport. */
+  @container (max-width: 640px) {
+    /* Drop the spacer corner — header columns now span the full width
+       and stay aligned with the cells row below each row label. */
+    [data-comparison] .comparison__header {
+      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    }
+    [data-comparison] .comparison__corner {
+      display: none;
+    }
+    [data-comparison] .comparison__col {
+      padding: 1rem 0.5rem;
+      gap: 0.25rem;
+    }
+    [data-comparison] .comparison__plan {
+      font-size: 1.0625rem;
+    }
+    [data-comparison] .comparison__meta {
+      font-size: 0.75rem;
+    }
+
+    /* Stack each row: label on top (full width), then cells across below. */
+    [data-comparison] .comparison__row {
+      grid-template-columns: 1fr;
+    }
+    [data-comparison] .comparison__rowname {
+      padding: 1rem var(--comparison-padding-x) 0.5rem;
+    }
+    [data-comparison] .comparison__cells {
+      display: grid;
+      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    }
+    [data-comparison] .comparison__cell {
+      padding: 0.75rem 0.5rem 1.25rem;
+    }
+  }
+</style>
