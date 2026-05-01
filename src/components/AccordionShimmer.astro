@@ -1,0 +1,340 @@
+---
+import { Icon } from "astro-icon/components";
+
+export type AccordionShimmerItem = {
+  question: string;
+  answer: string;
+  icon?: string;
+};
+
+interface Props {
+  items: AccordionShimmerItem[];
+  /** Close other items when one opens. Default true. */
+  closePrevious?: boolean;
+  /** Characters per second — answer wipe duration scales with text length. */
+  cps?: number;
+  /** Shimmer band width in `ch` units. */
+  shimmerSpread?: number;
+  /** ARIA label for the disclosure list region. */
+  ariaLabel?: string;
+  class?: string;
+}
+
+const {
+  items,
+  closePrevious = true,
+  cps = 50,
+  shimmerSpread = 20,
+  ariaLabel,
+  class: className,
+} = Astro.props;
+
+const groupId = `accshim-${Math.random().toString(36).slice(2, 9)}`;
+---
+
+<div
+  data-accordion-shimmer
+  data-close-previous={closePrevious ? "true" : "false"}
+  role={ariaLabel ? "region" : undefined}
+  aria-label={ariaLabel}
+  style={`--shimmer-spread: ${shimmerSpread}; --cps: ${cps};`}
+  class:list={["accshim", className]}
+>
+  <ul class="accshim__list">
+    {items.map((item, i) => {
+      const panelId = `${groupId}-panel-${i}`;
+      const buttonId = `${groupId}-button-${i}`;
+      const charCount = item.answer.trim().length;
+      return (
+        <li
+          class="accshim__item"
+          data-accshim-item
+          style={`--char-count: ${charCount};`}
+        >
+          <button
+            type="button"
+            id={buttonId}
+            aria-expanded="false"
+            aria-controls={panelId}
+            class="accshim__button"
+          >
+            <span class="accshim__btn-content">
+              <span class="accshim__icon-wrap" aria-hidden="true">
+                {item.icon && <Icon name={item.icon} class="accshim__icon" />}
+              </span>
+              <span class="accshim__question">{item.question}</span>
+            </span>
+            <svg
+              aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="accshim__plus"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 4.5v15m7.5-7.5h-15"
+              />
+            </svg>
+          </button>
+          <div
+            id={panelId}
+            role="region"
+            aria-labelledby={buttonId}
+            class="accshim__panel"
+          >
+            <div class="accshim__panel-inner">
+              <p class="accshim__answer">{item.answer}</p>
+            </div>
+          </div>
+        </li>
+      );
+    })}
+  </ul>
+</div>
+
+<style is:global>
+  [data-accordion-shimmer] {
+    /* Three-layer shimmer:
+       --shimmer-color: bright band that flashes across as the panel opens.
+       --shimmer-mid:   readable tone the text settles into AFTER the wipe.
+       --shimmer-rest:  pre-wipe baseline — intentionally near-invisible so
+                        the wipe reads as a reveal, not a highlight pass. */
+    --shimmer-color: var(--color-fg);
+    --shimmer-mid: color-mix(in srgb, var(--color-fg) 65%, transparent);
+    --shimmer-rest: color-mix(in srgb, var(--color-fg) 12%, transparent);
+    --shimmer-ease: var(--cubic-default);
+    --shimmer-speed: var(--timing-default-quarter);
+    display: block;
+    width: 100%;
+  }
+
+  [data-accordion-shimmer] .accshim__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  [data-accordion-shimmer] .accshim__item {
+    border-bottom: 1px solid var(--color-stroke);
+  }
+  [data-accordion-shimmer] .accshim__item:last-child {
+    border-bottom: 0;
+  }
+
+  [data-accordion-shimmer] .accshim__button {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0;
+    background: transparent;
+    border: 0;
+    color: var(--color-fg);
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    text-align: left;
+    user-select: none;
+  }
+
+  [data-accordion-shimmer] .accshim__button:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  [data-accordion-shimmer] .accshim__btn-content {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 0px 1fr;
+    align-items: center;
+    transition: grid-template-columns var(--shimmer-speed);
+  }
+
+  /* Items with an actual icon reserve a column. The grid-template-columns
+     transition makes the icon slide in/out cleanly. */
+  [data-accordion-shimmer] .accshim__item:has(.accshim__icon-wrap > svg) .accshim__btn-content {
+    grid-template-columns: 1.75rem 1fr;
+  }
+
+  [data-accordion-shimmer] .accshim__icon-wrap {
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+  [data-accordion-shimmer] .accshim__icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--color-fg-muted);
+  }
+
+  [data-accordion-shimmer] .accshim__plus {
+    width: 1.125rem;
+    height: 1.125rem;
+    flex: 0 0 auto;
+    opacity: 0.4;
+    transition:
+      opacity var(--shimmer-speed),
+      rotate var(--shimmer-speed);
+  }
+  [data-accordion-shimmer] .accshim__button:is(:hover, :focus-visible) .accshim__plus,
+  [data-accordion-shimmer] .accshim__item[data-open] .accshim__plus {
+    opacity: 1;
+  }
+  [data-accordion-shimmer] .accshim__item[data-open] .accshim__plus {
+    rotate: 225deg;
+  }
+
+  /* Panel — grid-template-rows trick lets the height animate from 0 → auto. */
+  [data-accordion-shimmer] .accshim__panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--shimmer-speed);
+  }
+  [data-accordion-shimmer] .accshim__panel-inner {
+    overflow: hidden;
+    min-height: 0;
+  }
+  [data-accordion-shimmer] .accshim__item[data-open] .accshim__panel {
+    grid-template-rows: 1fr;
+  }
+
+  [data-accordion-shimmer] .accshim__answer {
+    margin: 0;
+    padding: 0 0 1rem;
+    color: var(--shimmer-rest);
+    line-height: 1.55;
+    translate: 0 1lh;
+    opacity: 0.7;
+    transition:
+      translate var(--shimmer-speed),
+      opacity var(--shimmer-speed);
+  }
+  [data-accordion-shimmer] .accshim__item[data-open] .accshim__answer {
+    translate: 0 0;
+    opacity: 1;
+  }
+
+  /* Per-line shimmer wipe.
+     The paragraph paints as `display: inline` so each text-line fragment gets
+     its own copy of the gradient — that's what produces the line-by-line wipe.
+     Three background layers, all clipped to text:
+       1. Shimmer band — single bright color band at the right edge of a 200%-
+          wide gradient. Animating bg-position from `200% 0` to `0 0` wipes
+          the band across (then off the left edge — band is hidden again).
+       2. Midtone fill — solid mid-tone covering 100% of a 200%-wide layer.
+          Slides in with the band so AFTER the wipe completes the text settles
+          into a readable mid-tone, not back to invisible.
+       3. Rest tone — flat near-invisible layer always at 0 0. Before the wipe
+          arrives, only this layer paints the text — that's what makes the
+          shimmer read as a REVEAL rather than a highlight on visible text. */
+  @media (prefers-reduced-motion: no-preference) {
+    [data-accordion-shimmer] .accshim__answer {
+      display: inline;
+      color: transparent;
+      background-image:
+        linear-gradient(
+          90deg,
+          transparent 0 calc(100% - var(--shimmer-spread, 20) * 1ch),
+          var(--shimmer-color) calc(100% - var(--shimmer-spread, 20) * 1ch) 100%
+        ),
+        linear-gradient(90deg, var(--shimmer-mid) 0 100%),
+        linear-gradient(var(--shimmer-rest) 0 100%);
+      background-size: 200% 100%, 200% 100%, 100% 100%;
+      background-position: 200% 0, 200% 0, 0 0;
+      background-repeat: no-repeat;
+      background-clip: text;
+      -webkit-background-clip: text;
+      transition:
+        background-position
+          calc(var(--char-count, 200) / var(--cps, 50) * 1s)
+          var(--shimmer-ease),
+        translate var(--shimmer-speed),
+        opacity var(--shimmer-speed);
+    }
+
+    [data-accordion-shimmer] .accshim__item[data-open] .accshim__answer {
+      background-position: 0 0, 0 0, 0 0;
+    }
+
+    /* Selection styling — without this the shimmer makes selected text invisible. */
+    [data-accordion-shimmer] .accshim__answer::selection {
+      background: var(--shimmer-color);
+      color: var(--color-fg-on-intent);
+    }
+  }
+</style>
+
+<script>
+  type ShimmerRoot = HTMLElement & { __shimInit?: boolean };
+
+  function initOne(root: ShimmerRoot) {
+    if (root.__shimInit) return;
+    root.__shimInit = true;
+
+    const closePrevious = root.dataset.closePrevious !== "false";
+    const items = Array.from(
+      root.querySelectorAll<HTMLElement>("[data-accshim-item]"),
+    );
+
+    const setOpen = (item: HTMLElement, open: boolean) => {
+      item.toggleAttribute("data-open", open);
+      const btn = item.querySelector<HTMLButtonElement>(".accshim__button");
+      btn?.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+
+    // After a close, snap the answer's bg-position back to the closed state
+    // without animating. Otherwise the wipe runs in reverse over its full
+    // chars/cps duration and the next open won't start fresh.
+    const snapClosed = async (item: HTMLElement) => {
+      const panel = item.querySelector<HTMLElement>(".accshim__panel");
+      if (!panel) return;
+      await Promise.allSettled(
+        panel
+          .getAnimations()
+          .filter(
+            (a): a is CSSTransition =>
+              a instanceof CSSTransition &&
+              a.transitionProperty === "grid-template-rows",
+          )
+          .map((a) => a.finished),
+      );
+      if (item.hasAttribute("data-open")) return;
+      const answers = item.querySelectorAll<HTMLElement>(".accshim__answer");
+      for (const a of answers) a.style.setProperty("transition", "none");
+      void item.offsetHeight;
+      for (const a of answers) a.style.removeProperty("transition");
+    };
+
+    items.forEach((item) => {
+      const btn = item.querySelector<HTMLButtonElement>(".accshim__button");
+      btn?.addEventListener("click", () => {
+        const isOpen = item.hasAttribute("data-open");
+        if (closePrevious) {
+          for (const other of items) {
+            if (other !== item && other.hasAttribute("data-open")) {
+              setOpen(other, false);
+              snapClosed(other);
+            }
+          }
+        }
+        setOpen(item, !isOpen);
+        if (isOpen) snapClosed(item);
+      });
+    });
+  }
+
+  function initAll() {
+    document
+      .querySelectorAll<ShimmerRoot>("[data-accordion-shimmer]")
+      .forEach(initOne);
+  }
+
+  initAll();
+  document.addEventListener("astro:page-load", initAll);
+</script>

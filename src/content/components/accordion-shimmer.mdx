@@ -1,0 +1,157 @@
+---
+title: AccordionShimmer
+description: FAQ-style accordion where each answer wipes in line-by-line on open via a shimmer gradient timed to character count.
+category: pattern
+order: 25
+sourceFile: src/components/AccordionShimmer.astro
+status: stable
+related: [Accordion, AccordionFAQ, AccordionMorph]
+---
+
+import Preview from "@components/_docs/Preview.astro";
+import PropsTable from "@components/_docs/PropsTable.astro";
+import AccordionShimmer from "@components/AccordionShimmer.astro";
+
+A disclosure accordion built around a single visual hook: when an item opens, the answer text doesn't fade in — it gets *wiped* into focus by a shimmer gradient that travels line-by-line. Each answer's wipe duration is tied to its character count, so longer answers sweep proportionally longer (driven by a `cps` — characters-per-second — prop).
+
+The trick is `display: inline` on the answer paragraph, which makes the gradient repeat per text-line fragment, plus `background-clip: text` so the moving band paints the glyphs themselves. Reduced-motion users skip the wipe and see the resting muted text directly.
+
+## Preview
+
+<Preview label="FAQ — five items with leading icons" align="stretch">
+  <div class="w-full max-w-xl">
+    <AccordionShimmer
+      items={[
+        {
+          question: "Is this a course?",
+          answer: "No. There are no lessons to complete, no progress tracking, and no linear path. This is a playbook and reference you return to when you need it — whether that's to explore a specific idea or to see how a problem was approached end to end.",
+          icon: "lucide:book-open",
+        },
+        {
+          question: "Is this just prototype breakdowns?",
+          answer: "No. Some entries are deep studio explorations of real builds and prototypes, while others focus on foundations like animation, interactions, layout systems, web platform features, and breaking down complex interfaces.",
+          icon: "lucide:wand-sparkles",
+        },
+        {
+          question: "What's the format?",
+          answer: "Each entry combines video walkthroughs, written breakdowns, embedded demos, and downloadable source code so you can watch, read, explore, or jump between them depending on how you prefer to learn.",
+          icon: "lucide:graduation-cap",
+        },
+        {
+          question: "Who is this for?",
+          answer: "Anyone who builds interfaces and cares about doing it well. Whether you're early in your journey or already the person others rely on, the focus is on sharpening how you think about UI work, not just what you ship.",
+          icon: "lucide:users",
+        },
+        {
+          question: "Is this a one-time purchase?",
+          answer: "Yes. You pay once and get lifetime access, including all future updates. Pricing reflects the depth of the material today and will increase as the playbook grows.",
+          icon: "lucide:credit-card",
+        },
+      ]}
+    />
+  </div>
+</Preview>
+
+<Preview label="No icons, multi-open, faster wipe (cps=120)" align="stretch">
+  <div class="w-full max-w-xl">
+    <AccordionShimmer
+      cps={120}
+      closePrevious={false}
+      items={[
+        {
+          question: "What is a content collection?",
+          answer: "A typed, file-backed data source. Astro generates types from a Zod schema you declare in src/content.config.ts.",
+        },
+        {
+          question: "How does Astro compare to Next.js?",
+          answer: "Astro ships less JavaScript by default. Next.js is better for app-like UIs; Astro is better for content-heavy sites.",
+        },
+        {
+          question: "Can I use React inside Astro?",
+          answer: "Yes — and Vue, Svelte, Solid, Preact, and Lit. You can mix frameworks per island.",
+        },
+      ]}
+    />
+  </div>
+</Preview>
+
+## Props
+
+<PropsTable props={[
+  { name: "items", type: "AccordionShimmerItem[]", required: true, description: "List of question/answer pairs. Each item may include an optional `icon` (e.g. `lucide:book-open`) rendered before the question text." },
+  { name: "closePrevious", type: "boolean", default: "true", description: "Close the previously-open item when a new one is opened (single-open accordion). Pass `false` for multi-open behavior." },
+  { name: "cps", type: "number", default: "50", description: "Characters per second — sets the wipe duration per item. An answer of 200 chars at cps 50 wipes over 4 seconds. Higher = faster." },
+  { name: "shimmerSpread", type: "number", default: "20", description: "Width of the shimmer band in `ch` units. Wider = softer / longer-tailed wipe." },
+  { name: "ariaLabel", type: "string", description: "Adds `role=\"region\"` and an accessible name to the disclosure list. Omit if the surrounding heading already names the section." },
+  { name: "class", type: "string", description: "Additional classes on the wrapper." },
+]} />
+
+### Item shape
+
+```ts
+type AccordionShimmerItem = {
+  question: string;
+  answer: string;
+  icon?: string; // lucide icon name, e.g. "lucide:book-open"
+};
+```
+
+## Mechanism
+
+The shimmer is **three** `background-image` layers stacked on the answer `<p>`, all `background-clip: text`. The text itself is `color: transparent` so the gradients paint the glyphs directly.
+
+1. **Wipe band.** A `linear-gradient` containing one bright color band at the right edge of a 200%-wide layer. `background-position` animates from `200% 0` (band off-screen right) to `0 0` (band off-screen left) — the band sweeps across each line, then exits.
+2. **Midtone fill.** A solid mid-tone color covering the full 200%-wide layer. Slides in alongside the band, so after the wipe completes the text settles into a readable mid-tone (not back to invisible).
+3. **Rest tone.** A flat near-invisible layer always at `0 0`. Before the wipe arrives, only this layer paints the text — that's what makes the wipe read as a **reveal** rather than a highlight passing over already-visible text.
+
+The paragraph uses `display: inline`, so each text-line fragment gets its own copy of the gradient. That's the per-line wipe.
+
+Wipe timing scales with content length:
+
+```css
+transition-duration: calc(var(--char-count, 200) / var(--cps, 50) * 1s);
+```
+
+`--char-count` is set per item in the frontmatter (Astro reads `answer.trim().length`). `--cps` is set on the wrapper from the `cps` prop.
+
+## Theming
+
+Every color resolves through semantic tokens — drop the component inside `[data-theme="dark"]` and it inverts automatically. The shimmer color is `--color-fg`, the resting color is `--color-fg-subtle`. Override via CSS vars on the wrapper:
+
+| Variable               | Default                                                    | Purpose                                        |
+|------------------------|------------------------------------------------------------|------------------------------------------------|
+| `--shimmer-color`      | `var(--color-fg)`                                          | Bright band that flashes across as the panel opens. |
+| `--shimmer-mid`        | `color-mix(in srgb, var(--color-fg) 65%, transparent)`     | Tone the text settles into after the wipe completes. |
+| `--shimmer-rest`       | `color-mix(in srgb, var(--color-fg) 12%, transparent)`     | Pre-wipe baseline — near-invisible so the wipe reads as a reveal. |
+| `--shimmer-spread`     | `20`                                                       | Band width in `ch` (mirrors the `shimmerSpread` prop). |
+| `--shimmer-ease`       | `var(--cubic-default)`                                     | Easing for the wipe.                           |
+| `--shimmer-speed`      | `var(--timing-default-quarter)`                            | Duration for non-shimmer transitions (panel height, plus icon, etc.). |
+
+Example — green shimmer over default text:
+
+```astro
+<AccordionShimmer
+  class="my-faq"
+  items={[/* … */]}
+/>
+
+<style>
+  .my-faq { --shimmer-color: var(--color-success); }
+</style>
+```
+
+## Accessibility
+
+- Triggers are native `<button>` with `aria-expanded` + `aria-controls` wired to each panel.
+- Panels carry `role="region"` and `aria-labelledby` pointing at the trigger button.
+- Single-open mode mirrors common FAQ behavior; opt out with `closePrevious={false}` for multi-open.
+- `aria-hidden="true"` on decorative icons (the question text already names the row).
+- The shimmer wipe is wrapped in `@media (prefers-reduced-motion: no-preference)` — reduced-motion users see the resting muted text immediately on open with no wipe.
+- Selection styling (`::selection`) uses the shimmer color so highlighted text stays legible (without it, transparent glyphs would vanish on selection).
+
+## Notes
+
+- The `--char-count` per item is computed at render time from `answer.trim().length`. If you stream answers from Markdown or rich content later, recompute this with text-only length, not raw HTML length.
+- `display: inline` on the answer means it can't carry block layout (margins, padding) directly. Block spacing lives on the parent `.accshim__panel-inner` instead.
+- Wider `shimmerSpread` values look better for shorter answers; very short answers (< 30 chars) with a 20 ch spread can wipe almost instantly.
+- Single shimmer band only — the original effect supports multiple stacked color bands for chromatic effects. Add a second `linear-gradient` to the wipe layer if you want neon-duo behavior.
