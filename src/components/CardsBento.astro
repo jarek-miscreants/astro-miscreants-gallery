@@ -1,0 +1,48 @@
+---
+interface Props {
+  height?: string;
+  growWidth?: string;
+  growHeight?: string;
+  duration?: string;
+  gap?: string;
+  class?: string;
+}
+
+const {
+  height = "35rem",
+  growWidth = "190%",
+  growHeight = "125%",
+  duration = "0.4s",
+  gap = "0.5rem",
+  class: className = "",
+} = Astro.props;
+
+const styleVars = [
+  `--bento-height: ${height}`,
+  `--bento-grow-width: ${growWidth}`,
+  `--bento-grow-height: ${growHeight}`,
+  `--bento-duration: ${duration}`,
+  `--bento-gap: ${gap}`,
+].join("; ");
+---
+
+<div role="list" class:list={["bento", className]} style={styleVars}>
+  <slot />
+</div>
+
+<style>
+  .bento {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bento-gap);
+    height: var(--bento-height);
+    container-type: inline-size;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bento :global(.bento-row),
+    .bento :global(.bento-card) {
+      transition: none !important;
+    }
+  }
+</style>

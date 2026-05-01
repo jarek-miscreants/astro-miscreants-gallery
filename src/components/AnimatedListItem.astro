@@ -1,0 +1,141 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+  class?: string;
+}
+
+const { title, description, class: className = "" } = Astro.props;
+
+const iconContent = Astro.slots.has("icon")
+  ? await Astro.slots.render("icon")
+  : "";
+const hasIcon = iconContent.trim().length > 0;
+---
+
+<article
+  role="article"
+  aria-roledescription="notification card"
+  tabindex="0"
+  class:list={["alist__item", className]}
+>
+  {hasIcon && (
+    <div class="alist__item-icon" aria-hidden="true" set:html={iconContent} />
+  )}
+  <div class="alist__item-content">
+    <p class="alist__item-title">{title}</p>
+    {description && <p class="alist__item-desc">{description}</p>}
+    <slot />
+  </div>
+</article>
+
+<style>
+  .alist__item {
+    --alist-stack-depth: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.875rem 1.25rem;
+    min-height: var(--alist-card-min-h, 4.25rem);
+    background-color: var(--color-panel);
+    border: 1px solid var(--color-stroke);
+    color: var(--color-fg);
+    transform-origin: top center;
+    /* `transition: all` so margin/transform/opacity ride the same bouncy
+       linear() curve, giving the spring-style feel of the original. */
+    transition: all var(--alist-duration, 0.6s) var(--alist-easing, ease);
+    outline: none;
+    box-sizing: border-box;
+  }
+
+  .alist__item:focus-visible {
+    box-shadow:
+      0 0 0 2px var(--color-canvas),
+      0 0 0 4px var(--color-focus);
+  }
+
+  /* Collapsed: every card past the first pulls up nearly its full height,
+     leaving only `peek` showing. Scale shrinks the card from its top edge
+     so the visible peek strip narrows visibly with depth. z-index already
+     set inline by the script. */
+  :global([data-expanded="false"]) .alist__item:not(:first-child) {
+    margin-top: calc(
+      -1 * (var(--alist-card-min-h, 4.25rem) - var(--alist-peek, 0.625rem))
+    );
+  }
+
+  :global([data-expanded="false"]) .alist__item {
+    transform: scale(
+      calc(1 - var(--alist-stack-depth) * var(--alist-scale-step, 0.04))
+    );
+  }
+
+  /* Hide content of all stacked cards (everything except the top card)
+     in collapsed state. No transition — flips instantly on toggle. */
+  .alist__item-icon,
+  .alist__item-content {
+    transition: none;
+  }
+
+  :global([data-expanded="false"]) .alist__item:not(:first-child) .alist__item-icon,
+  :global([data-expanded="false"]) .alist__item:not(:first-child) .alist__item-content {
+    visibility: hidden;
+  }
+
+  :global([data-expanded="true"]) .alist__item {
+    margin-top: 0;
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  :global([data-expanded="false"]) .alist__item[aria-hidden="true"] {
+    pointer-events: none;
+  }
+
+  /* Cards beyond the visible stack depth fade fully — they're still in the
+     DOM (and aria-hidden) but visually gone so the stack stays tidy. */
+  :global([data-expanded="false"]) .alist__item[data-out-of-stack] {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .alist__item-icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    padding: 0.5rem;
+    color: var(--color-fg-on-intent);
+    background-color: var(--color-intent);
+  }
+
+  .alist__item-icon :global(svg) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .alist__item-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+  }
+
+  .alist__item-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-fg);
+    line-height: 1.3;
+  }
+
+  .alist__item-desc {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--color-fg-muted);
+    line-height: 1.4;
+  }
+</style>

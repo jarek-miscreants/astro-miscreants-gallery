@@ -1,0 +1,222 @@
+---
+interface Props {
+  previewCount?: number;
+  peek?: string;
+  visibleStackDepth?: number;
+  scaleStep?: number;
+  cardMinHeight?: string;
+  duration?: string;
+  easing?: string;
+  gap?: string;
+  showMoreLabel?: string;
+  showLessLabel?: string;
+  ariaLabel?: string;
+  class?: string;
+}
+
+const {
+  previewCount = 1,
+  peek = "0.225rem",
+  visibleStackDepth = 3,
+  scaleStep = 0.04,
+  cardMinHeight = "4.25rem",
+  duration = "0.6s",
+  easing = "linear(0, 0.03 1.5%, 0.121 3.2%, 0.851 13%, 0.99 16.4%, 1.063 20.2%, 1.076 22.3%, 1.075 24.8%, 1.013 35.9%, 0.995 43.4%, 1)",
+  gap = "0.75rem",
+  showMoreLabel = "Show more",
+  showLessLabel = "Show less",
+  ariaLabel = "Notification cards",
+  class: className = "",
+} = Astro.props;
+
+const id = "animated-list-" + Math.random().toString(36).slice(2, 10);
+const feedId = `${id}-feed`;
+
+const styleVars = [
+  `--alist-peek: ${peek}`,
+  `--alist-scale-step: ${scaleStep}`,
+  `--alist-card-min-h: ${cardMinHeight}`,
+  `--alist-duration: ${duration}`,
+  `--alist-easing: ${easing}`,
+  `--alist-gap: ${gap}`,
+  `--alist-visible-depth: ${visibleStackDepth}`,
+].join("; ");
+---
+
+<div
+  class:list={["alist", className]}
+  data-animated-list
+  data-expanded="false"
+  data-preview-count={previewCount}
+  style={styleVars}
+>
+  <div
+    id={feedId}
+    role="feed"
+    aria-label={ariaLabel}
+    aria-busy="false"
+    class="alist__feed"
+  >
+    <slot />
+  </div>
+
+  <button
+    type="button"
+    class="alist__toggle"
+    aria-expanded="false"
+    aria-controls={feedId}
+  >
+    <span class="alist__toggle-label" data-show-more>{showMoreLabel}</span>
+    <span class="alist__toggle-label" data-show-less hidden>{showLessLabel}</span>
+  </button>
+</div>
+
+<script>
+  type AListEl = HTMLElement & { __aListInit?: boolean };
+
+  function init(root: AListEl) {
+    if (root.__aListInit) return;
+    root.__aListInit = true;
+
+    const feed = root.querySelector<HTMLElement>(".alist__feed")!;
+    const toggle = root.querySelector<HTMLButtonElement>(".alist__toggle")!;
+    const showMore = toggle.querySelector<HTMLElement>("[data-show-more]")!;
+    const showLess = toggle.querySelector<HTMLElement>("[data-show-less]")!;
+    const previewCount = Math.max(
+      1,
+      parseInt(root.dataset.previewCount || "1", 10),
+    );
+    const items = Array.from(
+      feed.querySelectorAll<HTMLElement>(".alist__item"),
+    );
+    const total = items.length;
+
+    if (total <= previewCount) {
+      toggle.hidden = true;
+      items.forEach((it) => {
+        it.style.setProperty("--alist-stack-depth", "0");
+        it.removeAttribute("aria-hidden");
+        it.style.zIndex = String(total);
+      });
+      return;
+    }
+
+    const visibleDepth = Math.max(
+      1,
+      parseInt(
+        getComputedStyle(root).getPropertyValue("--alist-visible-depth").trim(),
+        10,
+      ) || 3,
+    );
+
+    items.forEach((item, i) => {
+      const depth = Math.min(i, visibleDepth);
+      item.style.setProperty("--alist-stack-depth", String(depth));
+      // z-index decreases with DOM order so top card paints above the rest.
+      item.style.zIndex = String(total - i);
+    });
+
+    const apply = (expanded: boolean) => {
+      root.dataset.expanded = String(expanded);
+      toggle.setAttribute("aria-expanded", String(expanded));
+      showMore.hidden = expanded;
+      showLess.hidden = !expanded;
+
+      items.forEach((item, i) => {
+        const beyondPreview = i >= previewCount;
+        const outOfStack = i > visibleDepth;
+        if (beyondPreview && !expanded) {
+          item.setAttribute("aria-hidden", "true");
+          item.setAttribute("tabindex", "-1");
+        } else {
+          item.removeAttribute("aria-hidden");
+          item.setAttribute("tabindex", "0");
+        }
+        if (outOfStack && !expanded) {
+          item.setAttribute("data-out-of-stack", "");
+        } else {
+          item.removeAttribute("data-out-of-stack");
+        }
+      });
+    };
+
+    toggle.addEventListener("click", () => {
+      apply(root.dataset.expanded !== "true");
+    });
+
+    apply(false);
+  }
+
+  function initAll() {
+    document
+      .querySelectorAll<HTMLElement>("[data-animated-list]")
+      .forEach((el) => init(el));
+  }
+
+  initAll();
+  document.addEventListener("astro:page-load", initAll);
+</script>
+
+<style>
+  .alist {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    border: 1px solid var(--color-stroke);
+    background-color: var(--color-panel);
+  }
+
+  .alist__feed {
+    display: flex;
+    flex-direction: column;
+    gap: var(--alist-gap, 0.75rem);
+    transition: gap var(--alist-duration, 0.6s) var(--alist-easing, ease);
+  }
+
+  /* Collapsed: items collapse onto each other via negative margin computed
+     against the card-min-h CSS var (predictable regardless of width).
+     Last item keeps no negative margin so the stack ends cleanly. */
+  .alist[data-expanded="false"] .alist__feed {
+    gap: 0;
+  }
+
+  .alist__toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    min-width: 10rem;
+    height: 2.5rem;
+    padding: 0 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--color-fg);
+    background-color: var(--color-canvas);
+    border: 1px solid var(--color-stroke);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+    outline: none;
+  }
+
+  .alist__toggle:hover {
+    background-color: var(--color-panel-muted);
+  }
+
+  .alist__toggle:focus-visible {
+    box-shadow:
+      0 0 0 2px var(--color-canvas),
+      0 0 0 4px var(--color-focus);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .alist__feed,
+    .alist :global(.alist__item) {
+      transition: none !important;
+    }
+  }
+</style>

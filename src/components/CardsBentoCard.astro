@@ -1,0 +1,177 @@
+---
+interface Props {
+  title: string;
+  titleTag?: "h2" | "h3" | "h4" | "h5";
+  href?: string;
+  theme?: "dark" | "light" | "inherit";
+  class?: string;
+}
+
+const {
+  title,
+  titleTag: TitleTag = "h3",
+  href,
+  theme = "dark",
+  class: className = "",
+} = Astro.props;
+
+const dataTheme = theme === "inherit" ? undefined : theme;
+
+const iconContent = Astro.slots.has("icon") ? await Astro.slots.render("icon") : "";
+const imageContent = Astro.slots.has("image") ? await Astro.slots.render("image") : "";
+const bodyContent = Astro.slots.has("default") ? await Astro.slots.render("default") : "";
+const ctaContent = Astro.slots.has("cta") ? await Astro.slots.render("cta") : "";
+
+const hasIcon = iconContent.trim().length > 0;
+const hasImage = imageContent.trim().length > 0;
+const hasBody = bodyContent.trim().length > 0;
+const hasCta = ctaContent.trim().length > 0;
+const hasReveal = hasBody || hasCta;
+---
+
+<div role="listitem" class:list={["bento-card", className]} data-theme={dataTheme}>
+  {hasImage && (
+    <div class="bento-card__image" aria-hidden="true" set:html={imageContent} />
+  )}
+
+  <div class="bento-card__content">
+    {hasIcon && (
+      <div class="bento-card__icon" aria-hidden="true" set:html={iconContent} />
+    )}
+
+    <div class="bento-card__header">
+      {href ? (
+        <TitleTag class="bento-card__title">
+          <a href={href} class="bento-card__title-link">{title}</a>
+        </TitleTag>
+      ) : (
+        <TitleTag class="bento-card__title">{title}</TitleTag>
+      )}
+
+      {hasReveal && (
+        <div class="bento-card__reveal">
+          <div class="bento-card__reveal-clip">
+            {hasBody && <div class="bento-card__body" set:html={bodyContent} />}
+            {hasCta && <div class="bento-card__cta" set:html={ctaContent} />}
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+</div>
+
+<style>
+  .bento-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid var(--color-stroke);
+    color: var(--color-fg);
+    background-color: var(--color-panel);
+    border-radius: var(--radius-card, 0.5rem);
+    overflow: hidden;
+    transition: width var(--bento-duration, var(--timing-default-half, 0.4s));
+  }
+
+  .bento-card :global(*) {
+    color: inherit;
+  }
+
+  .bento-card:hover,
+  .bento-card:focus-within {
+    width: var(--bento-grow-width, 190%);
+  }
+
+  .bento-card__image {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.8;
+    pointer-events: none;
+  }
+
+  .bento-card__image :global(img),
+  .bento-card__image :global(video) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .bento-card__content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1;
+    gap: 2rem;
+  }
+
+  .bento-card__icon {
+    width: 3rem;
+    height: 3rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bento-card__icon :global(svg),
+  .bento-card__icon :global(img) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .bento-card__header {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .bento-card__title {
+    text-wrap: balance;
+    font-size: 1.75rem;
+    line-height: 1.15;
+    margin: 0;
+  }
+
+  .bento-card__title-link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .bento-card__title-link:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
+    border-radius: 0.125rem;
+  }
+
+  .bento-card__reveal {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--bento-duration, 0.4s) ease;
+  }
+
+  .bento-card:hover .bento-card__reveal,
+  .bento-card:focus-within .bento-card__reveal {
+    grid-template-rows: 1fr;
+  }
+
+  .bento-card__reveal-clip {
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .bento-card__body {
+    text-wrap: balance;
+    padding-top: 0.7rem;
+    margin-bottom: 1rem;
+  }
+
+  .bento-card__cta {
+    margin-top: 0.5rem;
+  }
+</style>

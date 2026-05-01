@@ -1,0 +1,26 @@
+---
+interface Props {
+  class?: string;
+}
+
+const { class: className = "" } = Astro.props;
+---
+
+<div role="presentation" class:list={["bento-row", className]}>
+  <slot />
+</div>
+
+<style>
+  .bento-row {
+    display: flex;
+    flex: 0 1 auto;
+    gap: var(--bento-gap, 0.5rem);
+    height: 100%;
+    transition: height var(--bento-duration, var(--timing-default-half, 0.4s));
+  }
+
+  .bento-row:hover,
+  .bento-row:focus-within {
+    height: var(--bento-grow-height, 125%);
+  }
+</style>

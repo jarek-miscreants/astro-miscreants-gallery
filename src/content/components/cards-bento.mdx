@@ -1,0 +1,207 @@
+---
+title: CardsBento
+description: Hover-driven bento grid where the active card grows horizontally and reveals body content while siblings squeeze.
+category: block
+order: 11
+sourceFile: src/components/CardsBento.astro
+status: stable
+related: [CardFeatured, CardIcon, Grid]
+---
+
+import Preview from "@components/_docs/Preview.astro";
+import PropsTable from "@components/_docs/PropsTable.astro";
+import CardsBento from "@components/CardsBento.astro";
+import CardsBentoRow from "@components/CardsBentoRow.astro";
+import CardsBentoCard from "@components/CardsBentoCard.astro";
+import Button from "@components/Button.astro";
+import { Icon } from "astro-icon/components";
+
+A bento grid of cards that reflows on hover. Hovering a card expands it horizontally, squeezes its row siblings, and reveals additional content (description + CTA). Hovering anywhere in a row also bumps that row taller, pushing other rows down. All driven by CSS — no JS.
+
+## Preview
+
+<Preview label="Two rows · 2 + 1" align="stretch">
+  <div class="w-full">
+    <CardsBento>
+      <CardsBentoRow>
+        <CardsBentoCard title="Lorem ipsum dolor sit amet">
+          <Icon slot="icon" name="lucide:globe" class="h-12 w-12" />
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros.</p>
+          <Button slot="cta" label="Get Started" href="#" variant="secondary" />
+        </CardsBentoCard>
+        <CardsBentoCard title="Lorem ipsum dolor sit amet">
+          <Icon slot="icon" name="lucide:zap" class="h-12 w-12" />
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros.</p>
+          <Button slot="cta" label="Get Started" href="#" variant="secondary" />
+        </CardsBentoCard>
+      </CardsBentoRow>
+      <CardsBentoRow>
+        <CardsBentoCard title="Lorem ipsum dolor sit amet">
+          <Icon slot="icon" name="lucide:shield" class="h-12 w-12" />
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros.</p>
+          <Button slot="cta" label="Get Started" href="#" variant="secondary" />
+        </CardsBentoCard>
+      </CardsBentoRow>
+    </CardsBento>
+  </div>
+</Preview>
+
+<Preview label="theme=&quot;inherit&quot; · cards follow page theme" align="stretch">
+  <div class="w-full">
+    <CardsBento>
+      <CardsBentoRow>
+        <CardsBentoCard title="Inherits parent theme" theme="inherit">
+          <Icon slot="icon" name="lucide:sun-moon" class="h-12 w-12" />
+          <p>This card uses the page's canvas + fg tokens directly — flips automatically when the surrounding theme changes.</p>
+          <Button slot="cta" label="Get Started" href="#" variant="secondary" />
+        </CardsBentoCard>
+        <CardsBentoCard title="Same — inherits" theme="inherit">
+          <Icon slot="icon" name="lucide:palette" class="h-12 w-12" />
+          <p>No hard-coded surface colour. Border picks up <code>--color-stroke</code> via the parent.</p>
+        </CardsBentoCard>
+      </CardsBentoRow>
+    </CardsBento>
+  </div>
+</Preview>
+
+<Preview label="Three rows · denser grid, gentler grow" align="stretch">
+  <div class="w-full">
+    <CardsBento height="42rem" growWidth="160%" growHeight="120%">
+      <CardsBentoRow>
+        <CardsBentoCard title="Activity">
+          <Icon slot="icon" name="lucide:activity" class="h-10 w-10" />
+          <p>Track every event in real time.</p>
+        </CardsBentoCard>
+        <CardsBentoCard title="Search">
+          <Icon slot="icon" name="lucide:search" class="h-10 w-10" />
+          <p>Full-text search across the entire workspace.</p>
+        </CardsBentoCard>
+        <CardsBentoCard title="Layers">
+          <Icon slot="icon" name="lucide:layers" class="h-10 w-10" />
+          <p>Stack and reorder content without losing context.</p>
+        </CardsBentoCard>
+      </CardsBentoRow>
+      <CardsBentoRow>
+        <CardsBentoCard title="Compass">
+          <Icon slot="icon" name="lucide:compass" class="h-10 w-10" />
+          <p>Find your way with curated recommendations.</p>
+          <Button slot="cta" label="Explore" href="#" variant="secondary" />
+        </CardsBentoCard>
+        <CardsBentoCard title="Sparkles">
+          <Icon slot="icon" name="lucide:sparkles" class="h-10 w-10" />
+          <p>AI-assisted suggestions, on demand.</p>
+        </CardsBentoCard>
+      </CardsBentoRow>
+    </CardsBento>
+  </div>
+</Preview>
+
+## Props
+
+### `<CardsBento>`
+
+<PropsTable props={[
+  { name: "height", type: "string", default: '"35rem"', description: "Total height of the bento layout. Accepts any CSS length." },
+  { name: "growWidth", type: "string", default: '"190%"', description: "Width of a card on hover/focus. Sibling cards in the same row shrink to compensate." },
+  { name: "growHeight", type: "string", default: '"125%"', description: "Height of a row on hover/focus. Other rows shrink to compensate." },
+  { name: "duration", type: "string", default: '"0.4s"', description: "Transition duration for the grow + reveal animations." },
+  { name: "gap", type: "string", default: '"0.5rem"', description: "Gap between rows and between cards within a row." },
+  { name: "class", type: "string", default: '""', description: "Extra classes on the outer container." },
+]} />
+
+### `<CardsBentoCard>`
+
+<PropsTable props={[
+  { name: "title", type: "string", description: "Card heading text — always visible." },
+  { name: "titleTag", type: '"h2" | "h3" | "h4" | "h5"', default: '"h3"', description: "Semantic heading level for the title." },
+  { name: "href", type: "string", description: "If set, the title becomes a link to this URL." },
+  { name: "theme", type: '"dark" | "light" | "inherit"', default: '"dark"', description: "Sets data-theme on the card so it scopes its own canvas + fg tokens. Use \"inherit\" to follow the parent theme." },
+  { name: "class", type: "string", default: '""', description: "Extra classes on the card." },
+]} />
+
+### `<CardsBentoRow>`
+
+Plain wrapper — no props beyond `class`.
+
+## Slots
+
+`<CardsBento>` and `<CardsBentoRow>` accept a default slot (rows or cards respectively).
+
+`<CardsBentoCard>` accepts:
+
+| Slot      | Purpose                                                                         |
+|-----------|---------------------------------------------------------------------------------|
+| `icon`    | Icon shown above the title. Use `<Icon name="lucide:..." />` for Lucide glyphs. |
+| `image`   | Decorative background image/video that fills the card behind content.           |
+| default   | Body content revealed on hover (description, list, etc.).                        |
+| `cta`     | Action area at the bottom of the reveal — typically a `<Button>`.               |
+
+Slot detection uses `Astro.slots.render()`, so omitted slots emit no markup.
+
+## Mechanism
+
+- The container is a vertical flex of rows; each row is a horizontal flex of cards. Cards default to `width: 100%` and share row width via flex distribution.
+- **Card grow:** `:hover, :focus-within` on a card sets `width: var(--bento-grow-width)`. Because siblings have `width: 100%` and shrink, the row reflows and the active card dominates.
+- **Row grow:** the same trick on `.bento-row` — `:hover, :focus-within` sets `height: var(--bento-grow-height)`, squeezing the other row.
+- **Reveal:** body + CTA live in a wrapper using the `grid-template-rows: 0fr → 1fr` pattern with an `overflow: hidden` clip — animates from collapsed to natural height with no JS measurement.
+- **Focus parity:** `:focus-within` mirrors hover so a keyboard user tabbing into the CTA gets the same expansion.
+- **Reduced motion:** `@media (prefers-reduced-motion: reduce)` cancels transitions; reveal still works because grid-row state still flips, just instantly.
+
+## Theming
+
+Cards default to `theme="dark"` — `data-theme="dark"` on the card scopes the project's dark token values inside, so the card surface uses `var(--color-canvas)` (now dark) and text uses `var(--color-fg)` (now light). No hard-coded colors.
+
+- Pass `theme="light"` to scope dark text on a light card.
+- Pass `theme="inherit"` to follow the parent page theme — the card flips with the rest of the site.
+
+All animation knobs are CSS custom properties on the bento root. Override per-instance with the props above or scope a new value in your own CSS:
+
+```css
+.my-bento {
+  --bento-grow-width: 220%;
+  --bento-grow-height: 140%;
+  --bento-duration: 0.6s;
+  --bento-gap: 1rem;
+}
+```
+
+## Usage
+
+```astro
+---
+import CardsBento from "@components/CardsBento.astro";
+import CardsBentoRow from "@components/CardsBentoRow.astro";
+import CardsBentoCard from "@components/CardsBentoCard.astro";
+import Button from "@components/Button.astro";
+import { Icon } from "astro-icon/components";
+---
+
+<CardsBento>
+  <CardsBentoRow>
+    <CardsBentoCard title="Globe">
+      <Icon slot="icon" name="lucide:globe" class="h-12 w-12" />
+      <p>Description revealed on hover.</p>
+      <Button slot="cta" label="Get Started" href="#" variant="secondary" />
+    </CardsBentoCard>
+
+    <CardsBentoCard title="With background">
+      <img slot="image" src="/cover.jpg" alt="" />
+      <Icon slot="icon" name="lucide:zap" class="h-12 w-12" />
+      <p>Image fills the card behind content.</p>
+    </CardsBentoCard>
+  </CardsBentoRow>
+
+  <CardsBentoRow>
+    <CardsBentoCard title="Full-width row">
+      <Icon slot="icon" name="lucide:shield" class="h-12 w-12" />
+      <p>Single card in a row spans full width.</p>
+    </CardsBentoCard>
+  </CardsBentoRow>
+</CardsBento>
+```
+
+## Notes
+
+- Title is always visible. Body and CTA only show on hover/focus — keep the title self-explanatory so the card communicates without interaction.
+- The image slot is `aria-hidden` and pointer-event-disabled — treat it as decorative.
+- Best at 2–3 rows with 2–3 cards each. Many cards per row makes the squeeze too aggressive.

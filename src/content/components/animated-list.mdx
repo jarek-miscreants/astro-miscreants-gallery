@@ -1,0 +1,144 @@
+---
+title: AnimatedList
+description: Stacked notification cards that collapse into a peek-stack and expand into a vertical list with a single toggle.
+category: block
+order: 12
+sourceFile: src/components/AnimatedList.astro
+status: stable
+related: [CardsBento, Accordion, FlowSteps]
+---
+
+import Preview from "@components/_docs/Preview.astro";
+import PropsTable from "@components/_docs/PropsTable.astro";
+import AnimatedList from "@components/AnimatedList.astro";
+import AnimatedListItem from "@components/AnimatedListItem.astro";
+import { Icon } from "astro-icon/components";
+
+A vertical list of cards with two states. Collapsed, only the first card (or the first `previewCount` cards) is visible at full size — the rest sit behind it with a slight scale-down and negative margin to suggest a stack. Tapping the toggle expands the stack into a normal vertical list with gap. Driven by a small inline script and CSS transitions.
+
+## Preview
+
+<Preview label="Default — 1 visible, 4 stacked" align="center">
+  <div class="w-full max-w-md">
+    <AnimatedList previewCount={1}>
+      <AnimatedListItem title="Build job complete" description="Your latest commit deployed to staging in 42s.">
+        <Icon slot="icon" name="lucide:check-circle" />
+      </AnimatedListItem>
+      <AnimatedListItem title="New comment on PR #218" description="“Looks good — one small nit on naming.”">
+        <Icon slot="icon" name="lucide:message-square" />
+      </AnimatedListItem>
+      <AnimatedListItem title="3 dependencies need updating" description="Two patch releases, one minor.">
+        <Icon slot="icon" name="lucide:package" />
+      </AnimatedListItem>
+      <AnimatedListItem title="Weekly digest is ready" description="12 commits, 4 PRs merged, 1 release.">
+        <Icon slot="icon" name="lucide:mail" />
+      </AnimatedListItem>
+    </AnimatedList>
+  </div>
+</Preview>
+
+<Preview label="Two cards visible, deeper peek, slower transition" align="center">
+  <div class="w-full max-w-md">
+    <AnimatedList previewCount={2} peek="1rem" visibleStackDepth={2} duration="0.55s">
+      <AnimatedListItem title="Activity sync" description="Pulling new events from upstream sources.">
+        <Icon slot="icon" name="lucide:activity" />
+      </AnimatedListItem>
+      <AnimatedListItem title="Index rebuilt" description="Search index refreshed across 12k entries.">
+        <Icon slot="icon" name="lucide:search" />
+      </AnimatedListItem>
+      <AnimatedListItem title="Backup completed" description="Nightly snapshot stored to cold storage.">
+        <Icon slot="icon" name="lucide:hard-drive" />
+      </AnimatedListItem>
+      <AnimatedListItem title="API quota at 80%" description="Consider upgrading before next billing cycle.">
+        <Icon slot="icon" name="lucide:gauge" />
+      </AnimatedListItem>
+    </AnimatedList>
+  </div>
+</Preview>
+
+## Props
+
+### `<AnimatedList>`
+
+<PropsTable props={[
+  { name: "previewCount", type: "number", default: "1", description: "How many cards remain accessible (not aria-hidden) when collapsed. Affects keyboard/screen-reader visibility, not the visual stack." },
+  { name: "peek", type: "string", default: '"0.625rem"', description: "How much each stacked card peeks below the one above it. Combined with `cardMinHeight` it controls the visible strip per card." },
+  { name: "visibleStackDepth", type: "number", default: "3", description: "How many cards are visible in the stack (top card + N peeking strips). Cards past this depth fade fully." },
+  { name: "scaleStep", type: "number", default: "0.04", description: "How much each card scales down per depth level (0.04 = 4% per step). Smaller = subtler depth effect." },
+  { name: "cardMinHeight", type: "string", default: '"4.25rem"', description: "Minimum height for each card. The collapsed margin pulls items up by this minus `peek`, so heights stay predictable across containers." },
+  { name: "duration", type: "string", default: '"0.6s"', description: "Transition duration for the collapse/expand animation." },
+  { name: "easing", type: "string", default: 'spring linear()', description: "CSS timing function. Defaults to a bouncy spring `linear()` curve that overshoots slightly for personality. Override with any CSS easing." },
+  { name: "gap", type: "string", default: '"0.75rem"', description: "Vertical gap between cards in the expanded state." },
+  { name: "showMoreLabel", type: "string", default: '"Show more"', description: "Label for the toggle when collapsed." },
+  { name: "showLessLabel", type: "string", default: '"Show less"', description: "Label for the toggle when expanded." },
+  { name: "ariaLabel", type: "string", default: '"Notification cards"', description: "aria-label on the feed region. Override for screen-reader context." },
+  { name: "class", type: "string", default: '""', description: "Extra classes on the outer container." },
+]} />
+
+### `<AnimatedListItem>`
+
+<PropsTable props={[
+  { name: "title", type: "string", description: "Card title — always visible." },
+  { name: "description", type: "string", description: "Optional secondary copy below the title." },
+  { name: "class", type: "string", default: '""', description: "Extra classes on the card." },
+]} />
+
+## Slots
+
+`<AnimatedList>` accepts a default slot of `<AnimatedListItem>` children.
+
+`<AnimatedListItem>` accepts:
+
+| Slot     | Purpose                                                             |
+|----------|---------------------------------------------------------------------|
+| `icon`   | Icon shown in the leading square. Use `<Icon name="lucide:..." />`. |
+| default  | Extra content below `description` (a tag, timestamp, mini-action).  |
+
+## Mechanism
+
+- Each item carries a `--alist-stack-depth` CSS variable equal to its index (clamped to `visibleStackDepth`). Top card = `0`, second = `1`, etc.
+- **Collapsed (`[data-expanded="false"]`):** the feed becomes `position: relative` with a measured `min-height`, and every item becomes `position: absolute; top: depth * peek` with `transform: scale(1 - depth * scaleStep)`. `z-index` decreases with depth so the top card paints on top and successive cards peek out the bottom.
+- **Expanded (`[data-expanded="true"]`):** items return to normal flow with `gap`. Scale resets to `1`. The list reflows naturally.
+- The collapsed feed height is computed once on init (and on resize) by reading the first card's natural height and adding `visibleStackDepth * peek` for the peek strips.
+- The toggle is a real `<button>` with `aria-expanded` + `aria-controls` pointing at the feed's id. Hidden cards become focusable again on expand.
+- If there are fewer items than `previewCount`, the toggle hides itself and all cards render expanded by default.
+
+## Accessibility
+
+- Container is `role="feed"` with `aria-label`, `aria-busy`, and `aria-expanded` (state mirrored on the toggle).
+- Each item is `<article role="article" aria-roledescription="notification card">`, focusable so keyboard users can read each card.
+- Toggle uses native `<button>` semantics — no `role="button"` workaround. `aria-expanded` flips on click.
+- Items hidden in the collapsed view are `aria-hidden="true"` and removed from the tab order.
+- `@media (prefers-reduced-motion: reduce)` cancels the transform/margin transitions; state still flips, just instantly.
+
+## Theming
+
+The component uses the project's semantic tokens directly — no hard-coded colors. Cards use `--color-panel` over `--color-stroke`, the toggle uses the `secondary`-style canvas surface, and everything flips automatically inside `[data-theme="dark"]`. Per the design rules, all surfaces are sharp rectangles (no `border-radius`).
+
+## Usage
+
+```astro
+---
+import AnimatedList from "@components/AnimatedList.astro";
+import AnimatedListItem from "@components/AnimatedListItem.astro";
+import { Icon } from "astro-icon/components";
+---
+
+<AnimatedList previewCount={1}>
+  <AnimatedListItem title="Build complete" description="Deployed to staging in 42s.">
+    <Icon slot="icon" name="lucide:check-circle" />
+  </AnimatedListItem>
+  <AnimatedListItem title="New comment" description="On PR #218.">
+    <Icon slot="icon" name="lucide:message-square" />
+  </AnimatedListItem>
+  <AnimatedListItem title="Updates available" description="3 dependencies.">
+    <Icon slot="icon" name="lucide:package" />
+  </AnimatedListItem>
+</AnimatedList>
+```
+
+## Notes
+
+- Best at 3–6 cards. Too few makes the stack visual unconvincing; too many makes the collapsed silhouette unreadable.
+- The toggle copy defaults to "Show more" / "Show less" but you can swap it via the `showMoreLabel` / `showLessLabel` props for context-specific phrasing ("View all alerts" / "Hide alerts").
+- Cards beyond `previewCount` are still rendered in the DOM (so JS-disabled visitors can read them all). The collapse is a presentational layer.
