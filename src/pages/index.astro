@@ -4,6 +4,7 @@ import Logo from "../components/Logo.astro";
 import { getCollection } from "astro:content";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { execSync } from "node:child_process";
 
 const all = await getCollection("components");
 
@@ -33,9 +34,32 @@ const findThumb = (id: string): string | null => {
   return null;
 };
 
+// First-commit time per content file, used for "latest added" sort. Reads
+// `git log --diff-filter=A --follow` for each MDX — accurate across clones
+// (mtime is reset by git checkout, so we can't trust the filesystem here).
+// Falls back to 0 (sorts last) when git history isn't available.
+const gitAddedAt = (absPath: string): number => {
+  try {
+    const out = execSync(
+      `git log --diff-filter=A --follow --format=%aI -- "${absPath}"`,
+      { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+    ).trim();
+    const firstAdd = out.split("\n").pop() ?? "";
+    return firstAdd ? Date.parse(firstAdd) : 0;
+  } catch {
+    return 0;
+  }
+};
+
+// `entry.filePath` is already an absolute filesystem path string in Astro 6's
+// content layer — pass it straight to git.
 const components = all
-  .map((entry) => ({ entry, thumbUrl: findThumb(entry.id) }))
-  .sort((a, b) => a.entry.data.title.localeCompare(b.entry.data.title));
+  .map((entry) => ({
+    entry,
+    thumbUrl: findThumb(entry.id),
+    addedAt: entry.filePath ? gitAddedAt(entry.filePath) : 0,
+  }))
+  .sort((a, b) => b.addedAt - a.addedAt);
 
 const totalCount = all.length;
 
