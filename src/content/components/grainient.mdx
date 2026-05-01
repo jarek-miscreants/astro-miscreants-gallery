@@ -12,7 +12,7 @@ import Preview from "@components/_docs/Preview.astro";
 import PropsTable from "@components/_docs/PropsTable.astro";
 import Grainient from "@components/Grainient.astro";
 
-Animated grainy gradient rendered through a single GLSL fragment shader. A viewport-covering triangle is drawn into a WebGL2 canvas, and the shader does per-pixel rotational noise → sin-wave warp → three-color smoothstep blend → grain → contrast/gamma/saturation. No `ogl`, no `three.js`, no React — just raw WebGL2.
+Animated grainy gradient rendered through a single GLSL fragment shader. A viewport-covering triangle is drawn into a WebGL2 canvas, and the shader does per-pixel rotational noise → sin-wave warp → three-color smoothstep blend → grain → contrast/gamma/saturation. Raw WebGL2, no external libraries.
 
 ## Preview
 
@@ -89,6 +89,6 @@ The component renders as `position: absolute; inset: 0` over its parent — same
 ## Notes
 
 - **WebGL2 required.** Falls through silently with a console warning if unavailable. WebGL2 is supported by every browser since 2022, but very old iOS devices may not have it.
-- **No external dependencies.** Original React reference used `ogl`; this port uses raw WebGL2 to keep the gallery dependency-free.
+- **No external dependencies.** Uses raw WebGL2 to keep the gallery dependency-free.
 - DPR is capped at 2 to keep memory + fragment work reasonable; raise it in `setSize` if you need crisper grain on retina.
 - For dark surfaces the defaults look good; on a light background, swap `color3` to a lighter shade or your palette's neutral.
