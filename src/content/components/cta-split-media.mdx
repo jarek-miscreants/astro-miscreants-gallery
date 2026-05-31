@@ -37,7 +37,7 @@ Image-anchored conversion section. The image carries the emotional pull, the tex
   { name: "description", type: "string", description: "Supporting paragraph." },
   { name: "primaryLabel", type: "string", default: '"Start building"', description: "Action button text." },
   { name: "primaryHref", type: "string", default: '"#"', description: "Action button href." },
-  { name: "imageSrc", type: "string", description: "Image URL. Defaults to a placeholder Unsplash photo — replace before shipping." },
+  { name: "imageSrc", type: "string | ImageMetadata", description: "Image — an imported astro:assets asset (optimized) or a URL string. Defaults to a placeholder Unsplash photo — replace before shipping." },
   { name: "imageAlt", type: "string", default: '""', description: "Alt text for the image. Empty string means decorative." },
   { name: "imagePosition", type: '"left" | "right"', default: '"right"', description: "Which column the image sits in on `lg+` viewports." },
 ]} />

@@ -1,4 +1,6 @@
 ---
+import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
 import SectionMain from "@components/SectionMain.astro";
 import Button from "@components/Button.astro";
 
@@ -8,7 +10,8 @@ interface Props {
   description?: string;
   primaryLabel?: string;
   primaryHref?: string;
-  imageSrc?: string;
+  /** Media image — an imported asset (optimized) or a URL string (remote/public). */
+  imageSrc?: string | ImageMetadata;
   imageAlt?: string;
   imagePosition?: "left" | "right";
 }
@@ -45,13 +48,26 @@ const {
       "border border-stroke bg-panel overflow-hidden",
       imagePosition === "left" ? "lg:order-1" : "lg:order-2",
     ]}>
-      <img
-        src={imageSrc}
-        alt={imageAlt}
-        class="aspect-[4/3] w-full object-cover"
-        loading="lazy"
-        decoding="async"
-      />
+      {typeof imageSrc === "string"
+        ? (
+          <img
+            src={imageSrc}
+            alt={imageAlt}
+            class="aspect-[4/3] w-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <Image
+            src={imageSrc}
+            alt={imageAlt}
+            widths={[600, 1200]}
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            class="aspect-[4/3] w-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+        )}
     </div>
   </div>
 </SectionMain>

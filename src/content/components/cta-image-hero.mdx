@@ -30,7 +30,7 @@ Image carries the mood, gradient overlay carries the legibility, text and button
   { name: "primaryHref", type: "string", default: '"#"', description: "Primary action href." },
   { name: "secondaryLabel", type: "string", default: '"See the docs"', description: "Secondary action label. Set to empty string to hide." },
   { name: "secondaryHref", type: "string", default: '"#"', description: "Secondary action href." },
-  { name: "imageSrc", type: "string", description: "Background image URL. Defaults to a placeholder — replace before shipping." },
+  { name: "imageSrc", type: "string | ImageMetadata", description: "Background image — an imported astro:assets asset (optimized) or a URL string. Defaults to a placeholder — replace before shipping." },
   { name: "imageAlt", type: "string", default: '""', description: "Alt text. Empty string means decorative — preferred for hero backgrounds." },
 ]} />
 
